@@ -557,6 +557,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
   <div class="wrap">
     <div class="toplevel-tabs" id="clientTopTabs">
       <button class="tt on" id="ctabProgramsTop" onclick="showClientPrograms()">Programi</button>
+      <button class="tt" id="ctabNutritionTop" onclick="showClientNutrition()">Prehrana</button>
       <button class="tt" id="ctabProgressTop" onclick="showClientProgress()">Napredek</button>
       <button class="tt" id="ctabChatTop" onclick="showClientChat()">Klepet</button>
       <button class="tt" id="ctabNarocninaTop" onclick="showClientNarocnina()">Naročnina</button>
@@ -588,6 +589,15 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           </button>
         </div>
       </div>
+    </div>
+
+    <div id="clientScreenNutrition" class="hidden">
+      <div class="client-header">
+        <h2>Tvoja prehrana</h2>
+        <div class="meta">Obroki, ki ti jih je pripravila trenerka/trener</div>
+      </div>
+      <div class="card" id="clientNutritionTargets"></div>
+      <div id="clientMealList"></div>
     </div>
 
     <div id="clientScreenProgress" class="hidden">
@@ -1431,10 +1441,10 @@ async function deleteProgramTemplate(id){
 // ---------- STRANKIN POGLED ----------
 // ---------- STRANKIN POGLED ----------
 function hideAllClientScreens(){
-  ['clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress'].forEach(function(id){
+  ['clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress','clientScreenNutrition'].forEach(function(id){
     document.getElementById(id).classList.add('hidden');
   });
-  ['ctabProgramsTop','ctabChatTop','ctabNarocninaTop','ctabProgressTop'].forEach(function(id){
+  ['ctabProgramsTop','ctabChatTop','ctabNarocninaTop','ctabProgressTop','ctabNutritionTop'].forEach(function(id){
     document.getElementById(id).classList.remove('on');
   });
 }
@@ -1443,6 +1453,13 @@ function showClientPrograms(){
   hideAllClientScreens();
   document.getElementById('clientScreenPrograms').classList.remove('hidden');
   document.getElementById('ctabProgramsTop').classList.add('on');
+}
+function showClientNutrition(){
+  stopClientChatPolling();
+  hideAllClientScreens();
+  document.getElementById('clientScreenNutrition').classList.remove('hidden');
+  document.getElementById('ctabNutritionTop').classList.add('on');
+  loadClientNutrition();
 }
 function showClientChat(){
   hideAllClientScreens();
@@ -1899,6 +1916,55 @@ async function saveNutritionTargets(){
     toast('Cilji shranjeni ✓');
   }catch(err){ toast(err.message); }
   finally{ btn.disabled = false; btn.textContent = 'Shrani cilje'; }
+}
+async function loadClientNutrition(){
+  if(!clientProfile) return;
+  const targetsWrap = document.getElementById('clientNutritionTargets');
+  const listWrap = document.getElementById('clientMealList');
+  targetsWrap.innerHTML = '<span style="font-size:13px;color:var(--muted)">Nalagam…</span>';
+  listWrap.innerHTML = '';
+  try{
+    await loadMealOverrides(clientProfile.id);
+    const mRes = await fetch(SUPABASE_URL + '/rest/v1/obroki?trener_id=eq.' + clientProfile.trener_id + '&select=*&order=naziv.asc', { headers: authHeaders() });
+    if(!mRes.ok) throw new Error('Napaka pri nalaganju obrokov.');
+    const meals = await mRes.json();
+
+    const pr = proteinRange(clientProfile);
+    if(!clientProfile.cilj_kcal && !pr){
+      targetsWrap.innerHTML = '<span style="font-size:13px;color:var(--muted)">Trener ti še ni nastavil prehranskih ciljev.</span>';
+    } else {
+      targetsWrap.innerHTML = '<div class="kpis" style="margin-bottom:0">'
+        + (clientProfile.cilj_kcal ? '<div class="kpi"><b>' + clientProfile.cilj_kcal + '</b><span>kcal / dan</span></div>' : '')
+        + (pr ? '<div class="kpi"><b>' + pr.min + '–' + pr.max + ' g</b><span>beljakovin / dan</span></div>' : '')
+        + '</div>';
+    }
+
+    if(meals.length === 0){
+      listWrap.innerHTML = '<div class="empty">Trener še ni objavil nobenega obroka.</div>';
+      return;
+    }
+    listWrap.innerHTML = meals.map(function(m){
+      const s = evaluateMealSuitability(m, clientProfile);
+      const badge = s === 'primerno' ? '<span class="badge-ok">Primerno</span>' : s === 'neprimerno' ? '<span class="badge-bad">Neprimerno</span>' : '<span class="badge-mid">Vmes</span>';
+      const makros = [
+        m.kcal ? m.kcal+' kcal' : null, m.beljakovine ? m.beljakovine+' g B' : null,
+        m.ogljikovi_hidrati ? m.ogljikovi_hidrati+' g OH' : null, m.mascobe ? m.mascobe+' g M' : null
+      ].filter(Boolean).join(' · ');
+      const slika = m.slika_url
+        ? ('<img src="' + m.slika_url + '" style="width:100%;height:100%;object-fit:cover;display:block">')
+        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10.5px;text-align:center;padding:6px">Ni slike</div>';
+      return '<div class="meal-card">'
+        + '<div class="meal-card-img">' + slika + '</div>'
+        + '<div class="meal-card-body">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
+        + '<h3 style="font-size:16px">' + escapeHtml(m.naziv) + '</h3>' + badge
+        + '</div>'
+        + (makros ? '<div style="font-size:12.5px;color:var(--muted);margin-top:4px">' + makros + '</div>' : '')
+        + (m.recept ? '<div style="font-size:12.5px;color:var(--muted);margin-top:8px">' + escapeHtml(m.recept) + '</div>' : '')
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }catch(err){ targetsWrap.innerHTML=''; listWrap.innerHTML = '<div class="empty">Napaka pri nalaganju.</div>'; }
 }
 function proteinRange(c){
   if(!c.beljakovine_min_gkg || !c.beljakovine_max_gkg || !c.trenutna_teza) return null;
