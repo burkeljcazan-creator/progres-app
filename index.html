@@ -1419,7 +1419,7 @@ function renderProgramTemplates(list){
     const names = assignedIds.map(function(id){ const c = clients.find(function(x){ return x.id === id; }); return c ? c.ime : null; }).filter(Boolean);
     const namesHtml = names.length ? names.map(function(n){ return '<span class="assign-tag">' + escapeHtml(n) + '</span>'; }).join('') : '<span style="font-size:12px;color:var(--muted)">Ni dodeljen nobeni stranki</span>';
     return '<div class="program-card"><h3>' + escapeHtml(p.ime) + '</h3>'
-      + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">' + exCount + ' vaj</div>'
+      + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">' + vajaOblika(exCount) + '</div>'
       + '<div style="margin-bottom:10px">' + namesHtml + '</div>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
       + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary)" onclick="openProgramBuilder(null,\'' + p.id + '\')">Uredi</button>'
@@ -1659,7 +1659,7 @@ function renderClientPrograms(programi){
     const exCount = (p.program_vaje || []).length;
     return '<div class="program-card" style="cursor:pointer" onclick="openClientProgramDetail(\'' + p.id + '\')">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'
-      + '<div><h3 style="font-size:16px;margin-bottom:4px">' + escapeHtml(p.ime) + '</h3><div style="font-size:12.5px;color:var(--muted)">' + exCount + ' vaj' + (p.opis ? ' · ima opombo trenerja' : '') + '</div></div>'
+      + '<div><h3 style="font-size:16px;margin-bottom:4px">' + escapeHtml(p.ime) + '</h3><div style="font-size:12.5px;color:var(--muted)">' + vajaOblika(exCount) + (p.opis ? ' · ima opombo trenerja' : '') + '</div></div>'
       + '<span style="color:var(--primary);font-weight:800;font-size:22px;flex-shrink:0">›</span>'
       + '</div>'
       + '</div>';
@@ -2958,6 +2958,15 @@ function renderProgress(meritve){
 }
 
 // ---------- POMOŽNE ----------
+function vajaOblika(n){
+  const mod100 = n % 100;
+  let beseda;
+  if(mod100 === 1) beseda = 'vaja';
+  else if(mod100 === 2) beseda = 'vaji';
+  else if(mod100 === 3 || mod100 === 4) beseda = 'vaje';
+  else beseda = 'vaj';
+  return n + ' ' + beseda;
+}
 function escapeHtml(str){
   const div = document.createElement('div');
   div.textContent = str;
