@@ -1628,13 +1628,13 @@ async function sendChatMessageStranka(){
 }
 async function loadClientOwnPrograms(){
   try{
-    const res1 = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientProfile.id + '&select=program_id', { headers: authHeaders() });
+    const res1 = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientProfile.id + '&select=program_id', { headers: authHeaders(), cache: 'no-store' });
     if(!res1.ok) throw new Error('Napaka pri nalaganju programov.');
     const dod = await res1.json();
     if(dod.length === 0){ renderClientPrograms([]); return; }
     const ids = dod.map(function(d){ return d.program_id; }).join(',');
     const url2 = SUPABASE_URL + '/rest/v1/programi?id=in.(' + ids + ')&select=id,ime,opis,program_vaje(vaja_id,serije,ponovitve,priporocena_teza,ogrevalne_serije,vrstni_red,vaje(id,ime,opis,video_url,korak_povecanja_kg))';
-    const res2 = await fetch(url2, { headers: authHeaders() });
+    const res2 = await fetch(url2, { headers: authHeaders(), cache: 'no-store' });
     if(!res2.ok) throw new Error('Napaka pri nalaganju programov.');
     renderClientPrograms(await res2.json());
   }catch(err){ toast(err.message); }
