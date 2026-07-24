@@ -569,6 +569,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <div class="meta" id="clientMeta"></div>
       </div>
       <div id="clientProgramList"></div>
+      <div id="clientProgramDetailWrap" class="hidden"></div>
     </div>
 
     <div id="clientScreenChat" class="hidden">
@@ -1642,60 +1643,85 @@ async function loadClientOwnPrograms(){
 
 let clientWorkoutState = {};
 
+let clientProgramsData = [];
+
 function renderClientPrograms(programi){
-  const wrap = document.getElementById('clientProgramList');
+  clientProgramsData = programi || [];
   clientWorkoutState = {};
+  const wrap = document.getElementById('clientProgramList');
+  document.getElementById('clientProgramDetailWrap').classList.add('hidden');
+  wrap.classList.remove('hidden');
   if(!programi || programi.length === 0){
     wrap.innerHTML = '<div class="empty">Trener ti še ni dodelil nobenega programa.</div>';
     return;
   }
   wrap.innerHTML = programi.map(function(p){
-    const sorted = (p.program_vaje || []).slice().sort(function(a,b){ return (a.vrstni_red||0) - (b.vrstni_red||0); });
-    clientWorkoutState[p.id] = { exercises: sorted.map(function(pv){
-      return {
-        vaja_id: pv.vaja_id, ime: pv.vaje ? pv.vaje.ime : 'Vaja',
-        sets: Array.from({length: pv.serije || 3}, function(){ return { done:false, kg:'', reps: pv.ponovitve || '' }; })
-      };
-    })};
+    const exCount = (p.program_vaje || []).length;
+    return '<div class="program-card" style="cursor:pointer" onclick="openClientProgramDetail(\'' + p.id + '\')">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'
+      + '<div><h3 style="font-size:16px;margin-bottom:4px">' + escapeHtml(p.ime) + '</h3><div style="font-size:12.5px;color:var(--muted)">' + exCount + ' vaj' + (p.opis ? ' · ima opombo trenerja' : '') + '</div></div>'
+      + '<span style="color:var(--primary);font-weight:800;font-size:22px;flex-shrink:0">›</span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
 
-    const exHtml = sorted.map(function(pv, exIdx){
-      const naziv = pv.vaje ? pv.vaje.ime : 'Vaja';
-      const video = (pv.vaje && pv.vaje.video_url) ? (' · <a href="' + escapeHtml(pv.vaje.video_url) + '" target="_blank" rel="noopener" style="color:var(--primary)">▶ Video</a>') : '';
-      const opis = (pv.vaje && pv.vaje.opis) ? ('<div style="font-size:12px;color:var(--muted);margin-top:3px">' + escapeHtml(pv.vaje.opis) + '</div>') : '';
-      const ogrevanje = pv.ogrevalne_serije ? ('<div style="font-size:12px;color:#9A6512;margin-top:3px">Ogrevanje: ' + escapeHtml(pv.ogrevalne_serije) + '</div>') : '';
-      const teza = pv.priporocena_teza ? (pv.priporocena_teza + ' kg') : 'po občutku';
-      const setsHtml = Array.from({length: pv.serije || 3}, function(_, setIdx){
-        return '<div class="set-row" id="setrow_' + p.id + '_' + exIdx + '_' + setIdx + '">'
-          + '<div class="schk" onclick="toggleSetDone(\'' + p.id + '\',' + exIdx + ',' + setIdx + ')">' + (setIdx+1) + '</div>'
-          + '<span style="font-size:12px;color:var(--muted);width:52px;flex-shrink:0">' + (setIdx+1) + '. serija</span>'
-          + '<input type="number" step="0.5" placeholder="kg" inputmode="decimal" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'kg\',this.value)">'
-          + '<input type="number" placeholder="' + (pv.ponovitve||'pon.') + '" inputmode="numeric" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'reps\',this.value)">'
-          + '</div>';
-      }).join('');
-      return '<div class="ex-log-block" id="suggwrap_' + p.id + '_' + exIdx + '">'
-        + '<div style="font-weight:600;font-size:14px">' + escapeHtml(naziv) + video + '</div>'
-        + '<div style="font-size:12.5px;color:var(--muted);margin-top:2px">' + (pv.serije||3) + ' × ' + (pv.ponovitve||'') + ' · priporočilo trenerja: ' + teza + '</div>'
-        + '<div id="sugg_' + p.id + '_' + exIdx + '"></div>'
-        + ogrevanje + opis
-        + '<div style="margin-top:8px">' + setsHtml + '</div>'
+function openClientProgramDetail(programId){
+  const p = clientProgramsData.find(function(x){ return x.id === programId; });
+  if(!p) return;
+
+  const sorted = (p.program_vaje || []).slice().sort(function(a,b){ return (a.vrstni_red||0) - (b.vrstni_red||0); });
+  clientWorkoutState[p.id] = { exercises: sorted.map(function(pv){
+    return {
+      vaja_id: pv.vaja_id, ime: pv.vaje ? pv.vaje.ime : 'Vaja',
+      sets: Array.from({length: pv.serije || 3}, function(){ return { done:false, kg:'', reps: pv.ponovitve || '' }; })
+    };
+  })};
+
+  const exHtml = sorted.map(function(pv, exIdx){
+    const naziv = pv.vaje ? pv.vaje.ime : 'Vaja';
+    const video = (pv.vaje && pv.vaje.video_url) ? (' · <a href="' + escapeHtml(pv.vaje.video_url) + '" target="_blank" rel="noopener" style="color:var(--primary)">▶ Video</a>') : '';
+    const opis = (pv.vaje && pv.vaje.opis) ? ('<div style="font-size:12px;color:var(--muted);margin-top:3px">' + escapeHtml(pv.vaje.opis) + '</div>') : '';
+    const ogrevanje = pv.ogrevalne_serije ? ('<div style="font-size:12px;color:#9A6512;margin-top:3px">Ogrevanje: ' + escapeHtml(pv.ogrevalne_serije) + '</div>') : '';
+    const teza = pv.priporocena_teza ? (pv.priporocena_teza + ' kg') : 'po občutku';
+    const setsHtml = Array.from({length: pv.serije || 3}, function(_, setIdx){
+      return '<div class="set-row" id="setrow_' + p.id + '_' + exIdx + '_' + setIdx + '">'
+        + '<div class="schk" onclick="toggleSetDone(\'' + p.id + '\',' + exIdx + ',' + setIdx + ')">' + (setIdx+1) + '</div>'
+        + '<span style="font-size:12px;color:var(--muted);width:52px;flex-shrink:0">' + (setIdx+1) + '. serija</span>'
+        + '<input type="number" step="0.5" placeholder="kg" inputmode="decimal" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'kg\',this.value)">'
+        + '<input type="number" placeholder="' + (pv.ponovitve||'pon.') + '" inputmode="numeric" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'reps\',this.value)">'
         + '</div>';
     }).join('');
-
-    return '<div class="program-card">'
-      + '<h3>' + escapeHtml(p.ime) + '</h3>'
-      + (p.opis ? '<div style="background:var(--accent-soft);color:#7A5210;font-size:12.5px;border-radius:9px;padding:9px 12px;margin-bottom:10px;line-height:1.5">' + escapeHtml(p.opis) + '</div>' : '')
-      + exHtml
-      + '<label style="font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin:14px 0 6px">Pripomba o treningu (neobvezno)</label>'
-      + '<textarea id="tcomment_' + p.id + '" rows="2" placeholder="npr. kako je šlo, kje je bilo težko" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:\'Inter\',sans-serif;resize:vertical;margin-bottom:10px"></textarea>'
-      + '<button class="btn" onclick="finishWorkout(\'' + p.id + '\')">Zaključi trening</button>'
-      + '<div id="thistory_' + p.id + '" style="margin-top:14px"></div>'
+    return '<div class="ex-log-block" id="suggwrap_' + p.id + '_' + exIdx + '">'
+      + '<div style="font-weight:600;font-size:14px">' + escapeHtml(naziv) + video + '</div>'
+      + '<div style="font-size:12.5px;color:var(--muted);margin-top:2px">' + (pv.serije||3) + ' × ' + (pv.ponovitve||'') + ' · priporočilo trenerja: ' + teza + '</div>'
+      + '<div id="sugg_' + p.id + '_' + exIdx + '"></div>'
+      + ogrevanje + opis
+      + '<div style="margin-top:8px">' + setsHtml + '</div>'
       + '</div>';
   }).join('');
 
-  programi.forEach(function(p){
-    loadTrainingHistory(p.id);
-    loadLastSessionSuggestions(p);
-  });
+  const detailWrap = document.getElementById('clientProgramDetailWrap');
+  detailWrap.innerHTML = '<button class="back-btn" onclick="backToClientProgramList()">← Nazaj na programe</button>'
+    + '<div class="program-card">'
+    + '<h3>' + escapeHtml(p.ime) + '</h3>'
+    + (p.opis ? '<div style="background:var(--accent-soft);color:#7A5210;font-size:12.5px;border-radius:9px;padding:9px 12px;margin-bottom:10px;line-height:1.5">' + escapeHtml(p.opis) + '</div>' : '')
+    + exHtml
+    + '<label style="font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin:14px 0 6px">Pripomba o treningu (neobvezno)</label>'
+    + '<textarea id="tcomment_' + p.id + '" rows="2" placeholder="npr. kako je šlo, kje je bilo težko" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:\'Inter\',sans-serif;resize:vertical;margin-bottom:10px"></textarea>'
+    + '<button class="btn" onclick="finishWorkout(\'' + p.id + '\')">Zaključi trening</button>'
+    + '<div id="thistory_' + p.id + '" style="margin-top:14px"></div>'
+    + '</div>';
+
+  document.getElementById('clientProgramList').classList.add('hidden');
+  detailWrap.classList.remove('hidden');
+  loadTrainingHistory(p.id);
+  loadLastSessionSuggestions(p);
+}
+
+function backToClientProgramList(){
+  document.getElementById('clientProgramDetailWrap').classList.add('hidden');
+  document.getElementById('clientProgramList').classList.remove('hidden');
 }
 
 function toggleSetDone(pid, exIdx, setIdx){
