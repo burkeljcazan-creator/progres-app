@@ -13,12 +13,14 @@
   --accent:#F2A93B; --accent-soft:#FBEFD9;
   --danger:#D64545; --danger-soft:#FBE7E7; --ok:#1FA971; --ok-soft:#DFF6EC;
   --line:#D8E4EF; --r:14px;
+  --mint:#6FE3A8; --chart-track:#E3EBF3; --chart-under:#BFE0F7;
 }
 body.dark-theme{
   --bg:#091420; --card:#123049; --ink:#EAF2F8; --muted:#7E9AB2;
   --primary-soft:#173B57; --primary-ink:#7CC4F2; --accent-soft:#3A2E15;
   --danger-soft:#3A1F1F; --ok-soft:#123A2C;
   --line:#1E4568;
+  --chart-track:#17324B; --chart-under:#1E4568;
 }
 body.dark-theme .card, body.dark-theme .program-card, body.dark-theme .meal-card, body.dark-theme .attn-card,
 body.dark-theme .chat-box, body.dark-theme .ex-log-block, body.dark-theme .auth-card{ background:var(--card); }
@@ -376,10 +378,12 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <div class="field"><label>Opomba (neobvezno)</label><input type="text" id="mrOpomba" placeholder="npr. konec tedna težje"></div>
         <button class="btn" id="mrSaveBtn" onclick="saveMeritev()">Shrani meritev</button>
       </div>
+      <div class="card hidden" id="ringsCard"></div>
       <div class="card" id="progressChartCard"></div>
       <div class="card hidden" id="kcalChartCard"></div>
       <div class="card hidden" id="stepsChartCard"></div>
       <div class="card hidden" id="sleepChartCard"></div>
+      <div class="card hidden" id="heatCard"></div>
       <div id="progressList" style="margin-bottom:20px"></div>
 
       <div class="sec-head">
@@ -836,10 +840,12 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <button class="btn" id="cmrSaveBtn" onclick="saveClientMeritev()">Shrani</button>
       </div>
 
+      <div class="card hidden" id="cRingsCard"></div>
       <div class="card" id="cProgressChartCard"></div>
       <div class="card hidden" id="cKcalChartCard"></div>
       <div class="card hidden" id="cStepsChartCard"></div>
       <div class="card hidden" id="cSleepChartCard"></div>
+      <div class="card hidden" id="cHeatCard"></div>
       <div id="cProgressList"></div>
     </div>
 
@@ -2207,6 +2213,7 @@ function renderClientProgress(meritve){
   if(!meritve || meritve.length === 0){
     chartWrap.innerHTML = '<span style="font-size:13px;color:var(--muted)">Še ni vnosov. Dodaj prvega zgoraj.</span>';
     kcalWrap.classList.add('hidden'); stepsWrap.classList.add('hidden'); sleepWrap.classList.add('hidden');
+    ['ringsCard','heatCard','cRingsCard','cHeatCard'].forEach(function(id){ const e=document.getElementById(id); if(e) e.classList.add('hidden'); });
     listWrap.innerHTML = '';
     return;
   }
@@ -2217,10 +2224,24 @@ function renderClientProgress(meritve){
   const c = clientProfile || {};
 
   chartWrap.innerHTML = tezaEntries.length > 0 ? buildMiniChart(tezaEntries, 'teza', 'kg', 'Teža skozi čas', 'var(--primary-ink)') : '<span style="font-size:13px;color:var(--muted)">Ni vnesene teže še.</span>';
-  if(kcalEntries.length > 0){ kcalWrap.classList.remove('hidden'); kcalWrap.innerHTML = buildBarChart(kcalEntries, 'kcal_zauzito', 'kcal', 'Zaužite kalorije po dnevih', '#7CC4F2', c.cilj_kcal || null, 'kcal_c'); } else { kcalWrap.classList.add('hidden'); }
+  if(kcalEntries.length > 0){ kcalWrap.classList.remove('hidden'); kcalWrap.innerHTML = buildBarChart(kcalEntries, 'kcal_zauzito', 'kcal', 'Zaužite kalorije po dnevih', '#7CC4F2', c.cilj_kcal || null, 'kcal_c', 'combined'); } else { kcalWrap.classList.add('hidden'); }
   if(korakiEntries.length > 0){ stepsWrap.classList.remove('hidden'); stepsWrap.innerHTML = buildBarChart(korakiEntries, 'koraki', 'korakov', 'Koraki po dnevih', '#7CC4F2', c.cilj_koraki || null, 'koraki_c'); } else { stepsWrap.classList.add('hidden'); }
   if(spanjeEntries.length > 0){ sleepWrap.classList.remove('hidden'); sleepWrap.innerHTML = buildBarChart(spanjeEntries, 'spanje_ure', 'h', 'Spanje po dnevih', '#7CC4F2', c.cilj_spanje_ure || null, 'spanje_c'); } else { sleepWrap.classList.add('hidden'); }
 
+
+  // obroči za danes + koledar doslednosti
+  const danesIso = new Date().toISOString().slice(0,10);
+  const danesM = meritve.filter(function(m){ return m.datum === danesIso; })[0] || {};
+  const ringItems = [];
+  if(c.cilj_kcal) ringItems.push({ label:'Kalorije', val: danesM.kcal_zauzito || 0, target: c.cilj_kcal, sub:'/ ' + c.cilj_kcal + ' kcal' });
+  if(c.cilj_koraki) ringItems.push({ label:'Koraki', val: danesM.koraki || 0, target: c.cilj_koraki, sub:'/ ' + c.cilj_koraki });
+  if(c.cilj_spanje_ure) ringItems.push({ label:'Spanje', val: danesM.spanje_ure || 0, target: c.cilj_spanje_ure, sub:'/ ' + c.cilj_spanje_ure + ' h' });
+  const ringsWrap = document.getElementById('cRingsCard');
+  if(ringItems.length > 0){ ringsWrap.classList.remove('hidden'); ringsWrap.innerHTML = buildRings(ringItems); }
+  else { ringsWrap.classList.add('hidden'); }
+  const heatWrap = document.getElementById('cHeatCard');
+  if(meritve.length > 0){ heatWrap.classList.remove('hidden'); heatWrap.innerHTML = buildHeatCalendar(meritve); }
+  else { heatWrap.classList.add('hidden'); }
   listWrap.innerHTML = meritve.slice().reverse().map(function(m){
     const parts = [];
     if(m.teza !== null && m.teza !== undefined) parts.push(m.teza + ' kg');
@@ -3549,64 +3570,169 @@ function toggleBarValue(id){
   const el = document.getElementById(id);
   if(el) el.style.opacity = (el.style.opacity === '1') ? '0' : '1';
 }
-function buildBarChart(entries, field, unit, label, color, target, chartId){
-  const vals = entries.map(function(m){ return m[field]; });
-  const maxVal = (Math.max.apply(null, target ? vals.concat([target]) : vals) || 1) * 1.4;
-  const w = 320, h = 130, padX = 24, padTop = 26, padBottom = 30;
-  const chartH = h - padTop - padBottom;
-  const n = entries.length;
-  const slot = (w - padX*2) / n;
-  const barW = Math.max(8, Math.min(26, slot*0.55));
-  const bars = entries.map(function(m, i){
-    const val = m[field];
-    const barH = (val / maxVal) * chartH;
-    const x = padX + slot*i + (slot-barW)/2;
-    const y = padTop + (chartH - barH);
-    const barColor = target ? (val >= target ? '#6FE3A8' : '#F2724B') : color;
-    const dateColor = target ? (val >= target ? '#12946A' : '#C1441F') : 'var(--muted)';
-    const dateLbl = formatShortDate(m.datum);
-    const valId = 'vt_' + chartId + '_' + i;
-    const valLblY = y - 10;
-    return '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(1,barH).toFixed(1) + '" rx="3" fill="' + barColor + '" style="cursor:pointer" onclick="toggleBarValue(\'' + valId + '\')"/>'
-      + '<text id="' + valId + '" x="' + (x+barW/2).toFixed(1) + '" y="' + valLblY.toFixed(1) + '" font-size="9" font-weight="600" fill="var(--ink)" font-family="Inter" text-anchor="middle" style="opacity:0;pointer-events:none;transition:opacity .15s">' + val + '</text>'
-      + '<text x="' + (x+barW/2).toFixed(1) + '" y="' + (h-14) + '" font-size="9" font-weight="600" fill="' + dateColor + '" font-family="Inter" text-anchor="middle">' + dateLbl + '</text>';
-  }).join('');
-  const targetHtml = target ? ('<text x="' + (w-padX) + '" y="14" font-size="10" font-weight="600" fill="#12946A" font-family="Inter" text-anchor="end">cilj: ' + target + ' ' + unit + '</text>') : '';
-  const zadnja = entries[entries.length-1];
-  const povprecje = Math.round(vals.reduce(function(a,b){ return a+b; }, 0) / vals.length);
-  return '<h3 style="font-size:14.5px;margin-bottom:8px">' + label + '</h3>'
-    + '<p style="font-size:11px;color:var(--muted);margin-bottom:4px">Tapni stolpec za natančno vrednost</p>'
-    + '<svg width="100%" viewBox="0 0 320 130" role="img" aria-label="' + label + '">'
-    + targetHtml
-    + '<line x1="' + padX + '" y1="' + (h-padBottom) + '" x2="' + (w-padX) + '" y2="' + (h-padBottom) + '" stroke="var(--line)" stroke-width="1"/>'
-    + bars
-    + '</svg>'
-    + '<p style="font-size:12px;color:var(--muted);margin-top:8px">Povprečje: ' + povprecje + ' ' + unit + ' · zadnji vnos: ' + zadnja[field] + ' ' + unit + '</p>';
+function chartCardHead(title, sub, badgeTxt, badgeKind){
+  const badgeCss = badgeKind === 'ok'
+    ? 'background:var(--ok-soft);color:var(--ok)'
+    : 'background:var(--primary-soft);color:var(--primary-ink)';
+  return '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:16px">'
+    + '<div><div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">' + title + '</div>'
+    + (sub ? '<div style="font-size:11.5px;color:var(--muted);margin-top:2px">' + sub + '</div>' : '')
+    + '</div>'
+    + (badgeTxt ? '<div style="' + badgeCss + ';font-family:\'Archivo\',sans-serif;font-weight:700;font-size:11px;padding:4px 10px;border-radius:999px;white-space:nowrap">' + badgeTxt + '</div>' : '')
+    + '</div>';
 }
+// 6b — ploskev z mrežo (teža)
 function buildMiniChart(entries, field, unit, label, color){
   const vals = entries.map(function(m){ return m[field]; });
   const min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
   const razpon = (max - min) || 1;
-  const w = 320, h = 110, padX = 20, padTop = 16, padBottom = 20;
-  const stepX = entries.length > 1 ? (w - padX*2) / (entries.length - 1) : 0;
-  const points = entries.map(function(m, i){
-    const x = padX + stepX * i;
-    const y = padTop + (1 - (m[field] - min) / razpon) * (h - padTop - padBottom);
-    return x.toFixed(1) + ',' + y.toFixed(1);
-  }).join(' ');
-  const prva = entries[0], zadnja = entries[entries.length-1];
-  const lastPt = points.split(' ').pop().split(',');
-  const sprememba = (zadnja[field] - prva[field]);
-  const spremembaTxt = (sprememba > 0 ? '+' : '') + (Math.round(sprememba*10)/10) + ' ' + unit + ' od prve meritve';
-  return '<h3 style="font-size:14.5px;margin-bottom:8px">' + label + '</h3>'
-    + '<svg width="100%" viewBox="0 0 320 110" role="img" aria-label="' + label + '">'
-    + '<line x1="10" y1="' + (h-padBottom+4) + '" x2="310" y2="' + (h-padBottom+4) + '" stroke="var(--line)" stroke-width="1"/>'
-    + '<polyline points="' + points + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linecap="round"/>'
-    + '<circle cx="' + lastPt[0] + '" cy="' + lastPt[1] + '" r="4" fill="var(--accent)"/>'
-    + '<text x="14" y="14" font-size="10" fill="var(--muted)" font-family="Inter">' + prva[field] + ' ' + unit + '</text>'
-    + '<text x="' + (Math.max(0,parseFloat(lastPt[0])-24)) + '" y="' + (parseFloat(lastPt[1])-8>10?parseFloat(lastPt[1])-8:20) + '" font-size="10" fill="var(--muted)" font-family="Inter">' + zadnja[field] + ' ' + unit + '</text>'
+  const W = 300, H = 120, padY = 12;
+  const stepX = entries.length > 1 ? W / (entries.length - 1) : 0;
+  const pts = entries.map(function(m, i){
+    const x = entries.length > 1 ? stepX * i : W/2;
+    const y = padY + (1 - (m[field] - min) / razpon) * (H - padY*2);
+    return { x: x, y: y };
+  });
+  const line = pts.map(function(p){ return p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
+  const area = 'M' + pts[0].x.toFixed(1) + ',' + H + ' L' + pts.map(function(p){ return p.x.toFixed(1)+','+p.y.toFixed(1); }).join(' L') + ' L' + pts[pts.length-1].x.toFixed(1) + ',' + H + ' Z';
+  const grid = [0.25,0.5,0.75].map(function(f){
+    const y = (padY + f*(H-padY*2)).toFixed(1);
+    return '<line x1="0" x2="' + W + '" y1="' + y + '" y2="' + y + '" stroke="var(--chart-track)" stroke-width="1"/>';
+  }).join('');
+  const last = pts[pts.length-1];
+  const zadnja = entries[entries.length-1][field];
+  const sprememba = Math.round((zadnja - entries[0][field])*10)/10;
+  const dates = entries.length > 2
+    ? [entries[0], entries[Math.floor(entries.length/2)], entries[entries.length-1]]
+    : entries;
+  return '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">'
+    + '<div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">' + label + '</div>'
+    + '<div style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:17px;color:var(--primary-ink)">' + zadnja + ' <span style="font-size:11px;font-weight:400;color:var(--muted);font-family:\'Inter\',sans-serif">' + unit + '</span></div>'
+    + '</div>'
+    + '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="width:100%;height:130px;display:block" role="img" aria-label="' + label + '">'
+    + grid
+    + '<path d="' + area + '" fill="var(--primary)" fill-opacity="0.16"/>'
+    + '<polyline points="' + line + '" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '<circle cx="' + last.x.toFixed(1) + '" cy="' + last.y.toFixed(1) + '" r="4.5" fill="var(--primary)"/>'
     + '</svg>'
-    + '<p style="font-size:12px;color:var(--muted);margin-top:8px">' + spremembaTxt + '</p>';
+    + '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:8px">'
+    + dates.map(function(m){ return '<span>' + formatShortDate(m.datum) + '</span>'; }).join('')
+    + '</div>'
+    + '<div style="font-size:11.5px;color:var(--muted);margin-top:6px">' + (sprememba > 0 ? '+' : '') + sprememba + ' ' + unit + ' od prve meritve</div>';
+}
+// 6c / 6d — stolpci s ciljem; pri kalorijah še črtkana črta cilja
+function buildBarChart(entries, field, unit, label, color, target, chartId, mode){
+  const vals = entries.map(function(m){ return m[field]; });
+  const maxVal = Math.max.apply(null, target ? vals.concat([target]) : vals) || 1;
+  const skala = maxVal * 1.15;
+  const povpr = Math.round(vals.reduce(function(a,b){ return a+b; },0) / vals.length);
+  const dosezenih = target ? vals.filter(function(v){ return v >= target; }).length : 0;
+  const combined = mode === 'combined';
+  const H = combined ? 96 : 110;
+
+  const bars = entries.map(function(m, i){
+    const val = m[field];
+    const h = Math.max(3, (val / skala) * H);
+    const bg = target ? (val >= target ? 'var(--mint)' : 'var(--chart-under)') : 'var(--primary)';
+    const valId = 'vt_' + chartId + '_' + i;
+    const stolpec = '<div style="width:100%;border-radius:7px 7px 0 0;background:' + bg + ';height:' + h.toFixed(1) + 'px;cursor:pointer" onclick="toggleBarValue(\'' + valId + '\')"></div>';
+    if(combined){
+      return '<div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;height:100%">' + stolpec + '</div>';
+    }
+    return '<div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;height:100%">'
+      + stolpec
+      + '<div style="font-size:10px;color:var(--muted);white-space:nowrap">' + formatShortDate(m.datum) + '</div>'
+      + '</div>';
+  }).join('');
+
+  let ciljnaCrta = '';
+  if(combined && target){
+    const top = (1 - target/skala) * H;
+    ciljnaCrta = '<div style="position:absolute;left:0;right:0;top:' + top.toFixed(1) + 'px;height:0;border-top:1.5px dashed var(--primary-ink);z-index:1"></div>';
+  }
+
+  const graf = combined
+    ? '<div style="position:relative;height:' + H + 'px">' + ciljnaCrta + '<div style="display:flex;align-items:flex-end;gap:9px;height:' + H + 'px">' + bars + '</div></div>'
+      + '<div style="display:flex;gap:9px;margin-top:7px">'
+      + entries.map(function(m){
+          return '<div style="flex:1;text-align:center;min-width:0">'
+            + '<div style="font-size:9.5px;font-weight:600;color:var(--ink)">' + m[field] + '</div>'
+            + '<div style="font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap">' + formatShortDate(m.datum) + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+    : '<div style="display:flex;align-items:flex-end;gap:9px;height:' + H + 'px">' + bars + '</div>';
+
+  const legenda = (!combined && target)
+    ? '<div style="display:flex;align-items:center;gap:14px;margin-top:14px;font-size:10.5px;color:var(--muted)">'
+      + '<span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--mint)"></span>cilj dosežen</span>'
+      + '<span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--chart-under)"></span>pod ciljem</span>'
+      + '</div>'
+    : '';
+
+  const podnaslov = 'povprečje ' + povpr + ' ' + unit + (target ? '' : '');
+  const znacka = target
+    ? (combined ? 'cilj ' + target + ' ' + unit : dosezenih + ' / ' + entries.length + ' dni')
+    : '';
+  const znackaVrsta = (target && !combined) ? 'ok' : 'blue';
+
+  return chartCardHead(label, podnaslov, znacka, znackaVrsta) + graf + legenda;
+}
+// 6e — obroči za dnevne cilje
+function buildRings(items){
+  const r = 34, obseg = 2 * Math.PI * r;
+  return '<div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:16px">Danes</div>'
+    + '<div style="display:flex;gap:10px">' + items.map(function(it){
+      const pct = it.target ? Math.min(it.val / it.target, 1) : 0;
+      const dash = (obseg * pct).toFixed(1) + ' ' + obseg.toFixed(1);
+      const barva = pct >= 1 ? 'var(--mint)' : 'var(--primary)';
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px">'
+        + '<div style="position:relative;width:84px;height:84px">'
+        + '<svg viewBox="0 0 84 84" style="width:84px;height:84px;display:block;transform:rotate(-90deg)">'
+        + '<circle cx="42" cy="42" r="' + r + '" fill="none" stroke="var(--chart-track)" stroke-width="9"/>'
+        + '<circle cx="42" cy="42" r="' + r + '" fill="none" stroke="' + barva + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + dash + '"/>'
+        + '</svg>'
+        + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:\'Archivo\',sans-serif;font-weight:800;font-size:14px;color:var(--ink)">' + Math.round(pct*100) + '%</div>'
+        + '</div>'
+        + '<div style="text-align:center"><div style="font-size:11.5px;font-weight:600;color:var(--ink)">' + it.label + '</div>'
+        + '<div style="font-size:10px;color:var(--muted);margin-top:2px">' + it.val + ' ' + it.sub + '</div></div>'
+        + '</div>';
+    }).join('') + '</div>';
+}
+// 6f — koledar doslednosti (4 tedni)
+function buildHeatCalendar(meritve){
+  const dnevi = ['pon','tor','sre','čet','pet','sob','ned'];
+  const danes = new Date();
+  const cells = [];
+  const vneseni = {};
+  meritve.forEach(function(m){ vneseni[m.datum] = true; });
+  const zamik = (danes.getDay() + 6) % 7;
+  const konec = new Date(danes); konec.setDate(danes.getDate() + (6 - zamik));
+  const start = new Date(konec); start.setDate(konec.getDate() - 27);
+  let stVnosov = 0;
+  for(let i=0;i<28;i++){
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const jeVnos = !!vneseni[iso];
+    const vPrihodnosti = d > danes;
+    if(jeVnos) stVnosov++;
+    cells.push({ date: d.getDate(), on: jeVnos, future: vPrihodnosti });
+  }
+  return chartCardHead('Doslednost', formatShortDate(start.toISOString().slice(0,10)) + ' – ' + formatShortDate(konec.toISOString().slice(0,10)), stVnosov + ' / 28 dni', 'ok')
+    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px">'
+    + dnevi.map(function(d){ return '<div style="text-align:center;font-family:\'Archivo\',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)">' + d + '</div>'; }).join('')
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">'
+    + cells.map(function(c){
+        const bg = c.on ? 'var(--primary)' : 'var(--chart-track)';
+        const fg = c.on ? 'var(--on-primary)' : 'var(--muted)';
+        return '<div style="aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;background:' + bg + ';color:' + fg + ';opacity:' + (c.future ? '.4' : '1') + '">' + c.date + '</div>';
+      }).join('')
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:16px;margin-top:14px;font-size:10.5px;color:var(--muted)">'
+    + '<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:4px;background:var(--primary)"></span>vnesel podatke</span>'
+    + '<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:4px;background:var(--chart-track)"></span>brez vnosa</span>'
+    + '</div>';
 }
 function renderProgress(meritve){
   const chartWrap = document.getElementById('progressChartCard');
@@ -3617,6 +3743,7 @@ function renderProgress(meritve){
   if(!meritve || meritve.length === 0){
     chartWrap.innerHTML = '<span style="font-size:13px;color:var(--muted)">Še ni meritev. Dodaj prvo, da začneš spremljati napredek.</span>';
     kcalWrap.classList.add('hidden'); stepsWrap.classList.add('hidden'); sleepWrap.classList.add('hidden');
+    ['ringsCard','heatCard','cRingsCard','cHeatCard'].forEach(function(id){ const e=document.getElementById(id); if(e) e.classList.add('hidden'); });
     listWrap.innerHTML = '';
     return;
   }
@@ -3627,10 +3754,24 @@ function renderProgress(meritve){
   const c = clients.find(function(x){ return x.id === currentClientId; }) || {};
 
   chartWrap.innerHTML = tezaEntries.length > 0 ? buildMiniChart(tezaEntries, 'teza', 'kg', 'Teža skozi čas', 'var(--primary-ink)') : '<span style="font-size:13px;color:var(--muted)">Ni vnesene teže še.</span>';
-  if(kcalEntries.length > 0){ kcalWrap.classList.remove('hidden'); kcalWrap.innerHTML = buildBarChart(kcalEntries, 'kcal_zauzito', 'kcal', 'Zaužite kalorije po dnevih', '#7CC4F2', c.cilj_kcal || null, 'kcal'); } else { kcalWrap.classList.add('hidden'); }
+  if(kcalEntries.length > 0){ kcalWrap.classList.remove('hidden'); kcalWrap.innerHTML = buildBarChart(kcalEntries, 'kcal_zauzito', 'kcal', 'Zaužite kalorije po dnevih', '#7CC4F2', c.cilj_kcal || null, 'kcal', 'combined'); } else { kcalWrap.classList.add('hidden'); }
   if(korakiEntries.length > 0){ stepsWrap.classList.remove('hidden'); stepsWrap.innerHTML = buildBarChart(korakiEntries, 'koraki', 'korakov', 'Koraki po dnevih', '#7CC4F2', c.cilj_koraki || null, 'koraki'); } else { stepsWrap.classList.add('hidden'); }
   if(spanjeEntries.length > 0){ sleepWrap.classList.remove('hidden'); sleepWrap.innerHTML = buildBarChart(spanjeEntries, 'spanje_ure', 'h', 'Spanje po dnevih', '#7CC4F2', c.cilj_spanje_ure || null, 'spanje'); } else { sleepWrap.classList.add('hidden'); }
 
+
+  // obroči za danes + koledar doslednosti
+  const danesIso = new Date().toISOString().slice(0,10);
+  const danesM = meritve.filter(function(m){ return m.datum === danesIso; })[0] || {};
+  const ringItems = [];
+  if(c.cilj_kcal) ringItems.push({ label:'Kalorije', val: danesM.kcal_zauzito || 0, target: c.cilj_kcal, sub:'/ ' + c.cilj_kcal + ' kcal' });
+  if(c.cilj_koraki) ringItems.push({ label:'Koraki', val: danesM.koraki || 0, target: c.cilj_koraki, sub:'/ ' + c.cilj_koraki });
+  if(c.cilj_spanje_ure) ringItems.push({ label:'Spanje', val: danesM.spanje_ure || 0, target: c.cilj_spanje_ure, sub:'/ ' + c.cilj_spanje_ure + ' h' });
+  const ringsWrap = document.getElementById('ringsCard');
+  if(ringItems.length > 0){ ringsWrap.classList.remove('hidden'); ringsWrap.innerHTML = buildRings(ringItems); }
+  else { ringsWrap.classList.add('hidden'); }
+  const heatWrap = document.getElementById('heatCard');
+  if(meritve.length > 0){ heatWrap.classList.remove('hidden'); heatWrap.innerHTML = buildHeatCalendar(meritve); }
+  else { heatWrap.classList.add('hidden'); }
   listWrap.innerHTML = meritve.slice().reverse().map(function(m){
     const parts = [];
     if(m.teza !== null && m.teza !== undefined) parts.push(m.teza + ' kg');
