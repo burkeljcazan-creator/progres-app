@@ -13,6 +13,19 @@
   --danger:#D64545; --danger-soft:#FBE7E7; --ok:#2E8B62; --ok-soft:#E2F2EA;
   --line:#DCE3DF; --r:14px;
 }
+body.dark-theme{
+  --bg:#12181A; --card:#1B2224; --ink:#E7EDEA; --muted:#8FA098;
+  --primary-soft:#1E3830; --accent-soft:#3A2E15;
+  --danger-soft:#3A1F1F; --ok-soft:#173327;
+  --line:#2A3330;
+}
+body.dark-theme .card, body.dark-theme .program-card, body.dark-theme .meal-card, body.dark-theme .attn-card,
+body.dark-theme .chat-box, body.dark-theme .ex-log-block, body.dark-theme .auth-card{ background:var(--card); }
+body.dark-theme input, body.dark-theme select, body.dark-theme textarea{ background:#141A1C; color:var(--ink); border-color:var(--line); }
+body.dark-theme .tabs{ background:#1B2224; }
+.gear-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.gear-btn:hover{color:var(--primary);border-color:var(--primary)}
+.settings-section{max-width:520px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--ink);min-height:100vh}
 h1,h2,h3{font-family:'Archivo',sans-serif}
@@ -196,7 +209,12 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 <!-- ===================== APP ===================== -->
 <div id="appScreen" class="hidden">
   <div class="navbar">
-    <div class="brand">Progres<span>.</span></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="gear-btn" onclick="openSettingsMenu()" title="Nastavitve" aria-label="Nastavitve">
+        <svg viewBox="0 0 24 24" width="19" height="19" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+      <div class="brand">Progres<span>.</span></div>
+    </div>
     <div class="who">
       <span id="whoName"></span>
       <button onclick="handleLogout()">Odjava</button>
@@ -208,7 +226,6 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <button class="tt on" id="tabClientsTop" onclick="showClients()">Stranke</button>
       <button class="tt" id="tabProgramsTop" onclick="showPrograms()">Programi</button>
       <button class="tt" id="tabObrokiTop" onclick="showObroki()">Obroki</button>
-      <button class="tt" id="tabNastavitveTop" onclick="showNastavitve()">Nastavitve</button>
       <button class="tt" id="tabNarocnineTop" onclick="showNarocnine()">Naročnine</button>
     </div>
 
@@ -483,32 +500,102 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <div id="mealList"></div>
     </div>
 
-    <!-- ===== EKRAN: NASTAVITVE / BRANDING ===== -->
+    <!-- ===== EKRAN: NASTAVITVE (meni s podzavihki) ===== -->
     <div id="screenNastavitve" class="hidden">
-      <div class="sec-head"><h2>Branding tvoje aplikacije</h2></div>
-      <div style="background:var(--brand,var(--primary));border-radius:16px;padding:20px;margin-bottom:16px;color:#fff">
-        <div style="display:flex;align-items:center;gap:14px">
-          <div id="brandPreviewIcon" style="width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:#fff;overflow:hidden;flex-shrink:0">TŽ</div>
-          <div>
-            <div id="brandPreviewName" style="font-family:'Archivo',sans-serif;font-weight:800;font-size:18px">Moj Coaching</div>
-            <div style="font-size:12px;opacity:.75">Predogled — stranke vidijo to</div>
-          </div>
+      <button class="back-btn" onclick="showClients()">← Nazaj</button>
+      <div class="sec-head"><h2>Nastavitve</h2></div>
+
+      <div class="toplevel-tabs" id="settingsSubTabs" style="margin-bottom:20px">
+        <button class="tt on" id="stabProfil" onclick="showSettingsSection('profil')">Profil</button>
+        <button class="tt" id="stabBranding" onclick="showSettingsSection('branding')">Branding</button>
+        <button class="tt" id="stabSplosno" onclick="showSettingsSection('splosno')">Splošno</button>
+        <button class="tt" id="stabStranke" onclick="showSettingsSection('stranke')">Stranke</button>
+        <button class="tt" id="stabObvestila" onclick="showSettingsSection('obvestila')">Obvestila</button>
+      </div>
+
+      <!-- PROFIL -->
+      <div id="settingsSectionProfil" class="settings-section">
+        <div class="card">
+          <div class="field"><label>Ime</label><input type="text" id="profImeVal"></div>
+          <div class="field"><label>E-pošta</label><input type="text" id="profEmailVal" disabled style="background:#F4F6F5;color:var(--muted)"></div>
+          <button class="btn" id="profSaveBtn" onclick="saveProfileName()">Shrani ime</button>
+        </div>
+        <div class="sec-head"><h2 style="font-size:14.5px">Sprememba gesla</h2></div>
+        <div class="card">
+          <div class="field"><label>Novo geslo (vsaj 6 znakov)</label><input type="password" id="profNewPass"></div>
+          <div class="field"><label>Ponovi novo geslo</label><input type="password" id="profNewPass2"></div>
+          <button class="btn" id="profPassBtn" onclick="changePassword()">Spremeni geslo</button>
         </div>
       </div>
-      <div class="card">
-        <div class="field"><label>Ime aplikacije</label><input type="text" id="brandName" oninput="updateBrandPreview()" placeholder="npr. Ana Fit Coaching"></div>
-        <div class="field">
-          <label>Ikona</label>
-          <div style="display:flex;align-items:center;gap:12px">
-            <div id="brandIconPreview" style="width:56px;height:56px;border-radius:14px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Archivo',sans-serif;font-weight:800;overflow:hidden;flex-shrink:0">TŽ</div>
-            <label style="display:inline-block;background:var(--primary-soft);color:var(--primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;padding:9px 15px;border-radius:9px;cursor:pointer">Naloži sliko<input type="file" accept="image/*" style="display:none" onchange="loadBrandIcon(this)"></label>
+
+      <!-- BRANDING -->
+      <div id="settingsSectionBranding" class="settings-section hidden">
+        <div style="background:var(--brand,var(--primary));border-radius:16px;padding:20px;margin-bottom:16px;color:#fff">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div id="brandPreviewIcon" style="width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:#fff;overflow:hidden;flex-shrink:0">TŽ</div>
+            <div>
+              <div id="brandPreviewName" style="font-family:'Archivo',sans-serif;font-weight:800;font-size:18px">Moj Coaching</div>
+              <div style="font-size:12px;opacity:.75">Predogled — stranke vidijo to</div>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label>Barva</label>
-          <div id="brandColorPicker" style="display:flex;flex-wrap:wrap;gap:9px;margin-bottom:8px"></div>
+        <div class="card">
+          <div class="field"><label>Ime aplikacije</label><input type="text" id="brandName" oninput="updateBrandPreview()" placeholder="npr. Ana Fit Coaching"></div>
+          <div class="field">
+            <label>Ikona</label>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div id="brandIconPreview" style="width:56px;height:56px;border-radius:14px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Archivo',sans-serif;font-weight:800;overflow:hidden;flex-shrink:0">TŽ</div>
+              <label style="display:inline-block;background:var(--primary-soft);color:var(--primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;padding:9px 15px;border-radius:9px;cursor:pointer">Naloži sliko<input type="file" accept="image/*" style="display:none" onchange="loadBrandIcon(this)"></label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Barva</label>
+            <div id="brandColorPicker" style="display:flex;flex-wrap:wrap;gap:9px;margin-bottom:8px"></div>
+          </div>
+          <button class="btn" id="brandSaveBtn" onclick="saveBranding()">Shrani branding</button>
         </div>
-        <button class="btn" id="brandSaveBtn" onclick="saveBranding()">Shrani branding</button>
+      </div>
+
+      <!-- SPLOŠNO -->
+      <div id="settingsSectionSplosno" class="settings-section hidden">
+        <div class="sec-head"><h2 style="font-size:14.5px">Videz</h2></div>
+        <div class="card">
+          <div class="field">
+            <label>Tema</label>
+            <div style="display:flex;gap:8px">
+              <button class="btn-small" id="themeLightBtn" onclick="setTheme('light')" style="background:var(--primary-soft);color:var(--primary)">☀️ Svetla</button>
+              <button class="btn-small" id="themeDarkBtn" onclick="setTheme('dark')">🌙 Temna</button>
+            </div>
+          </div>
+        </div>
+        <div class="sec-head"><h2 style="font-size:14.5px">Opozorila</h2></div>
+        <div class="card">
+          <div class="field"><label>Po koliko dneh brez stika/meritve naj stranka postane "Potrebuje pozornost"?</label><input type="number" id="pragDniVal" placeholder="npr. 14"></div>
+          <button class="btn" id="pragSaveBtn" onclick="saveGeneralSettings()">Shrani</button>
+        </div>
+      </div>
+
+      <!-- STRANKE (privzete vrednosti) -->
+      <div id="settingsSectionStranke" class="settings-section hidden">
+        <div class="sec-head"><h2 style="font-size:14.5px">Privzete vrednosti za nove stranke</h2></div>
+        <div class="card">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Te vrednosti se samodejno predizpolnijo, ko pri novi stranki prvič odpreš "Nastavi cilje" — še vedno jih lahko za vsako stranko posebej spremeniš.</p>
+          <div class="grid2">
+            <div class="field"><label>Privzete beljakovine — min (g/kg)</label><input type="number" step="0.1" id="privzBeljMin" placeholder="npr. 1.8"></div>
+            <div class="field"><label>Privzete beljakovine — max (g/kg)</label><input type="number" step="0.1" id="privzBeljMax" placeholder="npr. 2.2"></div>
+          </div>
+          <button class="btn" id="privzSaveBtn" onclick="saveGeneralSettings()">Shrani</button>
+        </div>
+      </div>
+
+      <!-- OBVESTILA -->
+      <div id="settingsSectionObvestila" class="settings-section hidden">
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:13.5px;font-weight:600;margin-bottom:3px">⏳ Na voljo kmalu</div>
+            <div style="font-size:12px;color:var(--muted)">E-poštna obvestila (novo sporočilo stranke, nova naročnina ipd.) zahtevajo dodatno tehnično nastavitev na strežniški strani.</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -883,10 +970,16 @@ async function enterApp(){
   const ime = (session.user && session.user.user_metadata && session.user.user_metadata.ime) || session.user.email || 'Trener';
   document.getElementById('whoName').textContent = ime;
   try{
-    const bRes = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=brand_barva', { headers: authHeaders() });
+    const bRes = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=brand_barva,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg', { headers: authHeaders() });
     const bRows = bRes.ok ? await bRes.json() : [];
-    if(bRows[0] && bRows[0].brand_barva){ document.documentElement.style.setProperty('--primary', bRows[0].brand_barva); }
+    if(bRows[0]){
+      if(bRows[0].brand_barva) document.documentElement.style.setProperty('--primary', bRows[0].brand_barva);
+      trenerjevPrag = bRows[0].prag_pozornosti_dni || 14;
+      privzBeljMinGlobal = bRows[0].privzeto_beljakovine_min_gkg;
+      privzBeljMaxGlobal = bRows[0].privzeto_beljakovine_max_gkg;
+    }
   }catch(e){}
+  applyStoredTheme();
   await loadClients();
   await loadVaje();
   await loadMape();
@@ -905,7 +998,6 @@ function setTopTab(tab){
   document.getElementById('tabClientsTop').classList.toggle('on', tab==='clients');
   document.getElementById('tabProgramsTop').classList.toggle('on', tab==='programs');
   document.getElementById('tabObrokiTop').classList.toggle('on', tab==='obroki');
-  document.getElementById('tabNastavitveTop').classList.toggle('on', tab==='nastavitve');
   document.getElementById('tabNarocnineTop').classList.toggle('on', tab==='narocnine');
 }
 function showNarocnine(){
@@ -922,12 +1014,102 @@ function showObroki(){
   setTopTab('obroki');
   renderMealLibrary();
 }
-function showNastavitve(){
+let trenerjevPrag = 14;
+let privzBeljMinGlobal = null;
+let privzBeljMaxGlobal = null;
+
+function openSettingsMenu(){
   hideAllScreens();
   document.getElementById('screenNastavitve').classList.remove('hidden');
-  document.getElementById('topTabs').classList.remove('hidden');
-  setTopTab('nastavitve');
+  document.getElementById('topTabs').classList.add('hidden');
+  showSettingsSection('profil');
   loadBrandingForm();
+  loadSettingsData();
+}
+function showSettingsSection(name){
+  ['profil','branding','splosno','stranke','obvestila'].forEach(function(s){
+    document.getElementById('settingsSection' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('hidden', s !== name);
+    document.getElementById('stab' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('on', s === name);
+  });
+}
+async function loadSettingsData(){
+  document.getElementById('profEmailVal').value = (session.user && session.user.email) || '';
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=ime,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg', { headers: authHeaders(), cache: 'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    const t = rows[0];
+    if(t){
+      document.getElementById('profImeVal').value = t.ime || '';
+      trenerjevPrag = t.prag_pozornosti_dni || 14;
+      privzBeljMinGlobal = t.privzeto_beljakovine_min_gkg;
+      privzBeljMaxGlobal = t.privzeto_beljakovine_max_gkg;
+      document.getElementById('pragDniVal').value = trenerjevPrag;
+      document.getElementById('privzBeljMin').value = privzBeljMinGlobal || '';
+      document.getElementById('privzBeljMax').value = privzBeljMaxGlobal || '';
+    }
+  }catch(e){}
+}
+async function saveProfileName(){
+  const btn = document.getElementById('profSaveBtn');
+  const ime = document.getElementById('profImeVal').value.trim();
+  if(!ime){ toast('Vpiši ime.'); return; }
+  btn.disabled = true; btn.textContent = 'Shranjujem...';
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id, {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ ime: ime })
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju imena.');
+    document.getElementById('whoName').textContent = ime;
+    toast('Ime shranjeno ✓');
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Shrani ime'; }
+}
+async function changePassword(){
+  const p1 = document.getElementById('profNewPass').value;
+  const p2 = document.getElementById('profNewPass2').value;
+  if(!p1 || p1.length < 6){ toast('Geslo naj ima vsaj 6 znakov.'); return; }
+  if(p1 !== p2){ toast('Gesli se ne ujemata.'); return; }
+  const btn = document.getElementById('profPassBtn');
+  btn.disabled = true; btn.textContent = 'Spreminjam...';
+  try{
+    const res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+      method:'PUT', headers: authHeaders(), body: JSON.stringify({ password: p1 })
+    });
+    if(!res.ok){ const e = await res.json().catch(function(){return{};}); throw new Error(e.msg || 'Napaka pri spremembi gesla.'); }
+    document.getElementById('profNewPass').value = '';
+    document.getElementById('profNewPass2').value = '';
+    toast('Geslo spremenjeno ✓');
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Spremeni geslo'; }
+}
+function setTheme(theme){
+  document.body.classList.toggle('dark-theme', theme === 'dark');
+  localStorage.setItem('progres_theme', theme);
+  document.getElementById('themeLightBtn').style.background = theme === 'light' ? 'var(--primary-soft)' : 'transparent';
+  document.getElementById('themeLightBtn').style.color = theme === 'light' ? 'var(--primary)' : 'var(--muted)';
+  document.getElementById('themeDarkBtn').style.background = theme === 'dark' ? 'var(--primary-soft)' : 'transparent';
+  document.getElementById('themeDarkBtn').style.color = theme === 'dark' ? 'var(--primary)' : 'var(--muted)';
+}
+function applyStoredTheme(){
+  const t = localStorage.getItem('progres_theme') || 'light';
+  setTheme(t);
+}
+async function saveGeneralSettings(){
+  try{
+    const payload = {
+      prag_pozornosti_dni: document.getElementById('pragDniVal').value ? parseInt(document.getElementById('pragDniVal').value) : 14,
+      privzeto_beljakovine_min_gkg: document.getElementById('privzBeljMin').value ? parseFloat(document.getElementById('privzBeljMin').value) : null,
+      privzeto_beljakovine_max_gkg: document.getElementById('privzBeljMax').value ? parseFloat(document.getElementById('privzBeljMax').value) : null
+    };
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id, {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju nastavitev.');
+    trenerjevPrag = payload.prag_pozornosti_dni;
+    privzBeljMinGlobal = payload.privzeto_beljakovine_min_gkg;
+    privzBeljMaxGlobal = payload.privzeto_beljakovine_max_gkg;
+    toast('Nastavitve shranjene ✓');
+  }catch(err){ toast(err.message); }
 }
 function showClients(){
   hideAllScreens();
@@ -2007,8 +2189,8 @@ function toggleNutritionTargetForm(){
   const c = clients.find(function(x){ return x.id === currentClientId; });
   if(c){
     document.getElementById('ntKcal').value = c.cilj_kcal || '';
-    document.getElementById('ntBeljakovineMin').value = c.beljakovine_min_gkg || '';
-    document.getElementById('ntBeljakovineMax').value = c.beljakovine_max_gkg || '';
+    document.getElementById('ntBeljakovineMin').value = c.beljakovine_min_gkg || privzBeljMinGlobal || '';
+    document.getElementById('ntBeljakovineMax').value = c.beljakovine_max_gkg || privzBeljMaxGlobal || '';
     document.getElementById('ntKoraki').value = c.cilj_koraki || '';
     document.getElementById('ntSpanje').value = c.cilj_spanje_ure || '';
   }
@@ -2865,11 +3047,11 @@ async function renderNeedsAttention(){
       const msgDate = lastMsg[c.id];
       const daysMsg = msgDate ? Math.floor((now - new Date(msgDate).getTime()) / 86400000) : null;
       if(daysMsg === null) flags.push('Ni sporočil še');
-      else if(daysMsg > 14) flags.push('Brez stika ' + daysMsg + ' dni');
+      else if(daysMsg > trenerjevPrag) flags.push('Brez stika ' + daysMsg + ' dni');
       const merDate = lastMer[c.id];
       const daysMer = merDate ? Math.floor((now - new Date(merDate).getTime()) / 86400000) : null;
       if(daysMer === null) flags.push('Ni meritve teže');
-      else if(daysMer > 14) flags.push('Meritev stara ' + daysMer + ' dni');
+      else if(daysMer > trenerjevPrag) flags.push('Meritev stara ' + daysMer + ' dni');
       if(flags.length > 0) items.push({ client: c, flags: flags });
     });
 
@@ -3075,6 +3257,7 @@ function toast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3200);
 }
+applyStoredTheme();
 </script>
 </body>
 </html>
