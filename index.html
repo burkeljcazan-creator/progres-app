@@ -29,6 +29,26 @@ body.dark-theme .tabs{ background:#1B2224; }
 .gear-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .gear-btn:hover{color:var(--primary-ink);border-color:var(--primary-ink)}
 .settings-section{max-width:520px}
+.avatar-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--primary-soft);color:var(--primary-ink);font-family:'Archivo',sans-serif;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.avatar-btn:hover{border-color:var(--primary-ink)}
+.profile-menu{position:absolute;top:44px;right:0;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(9,20,32,.14);padding:6px;min-width:170px;z-index:20;display:flex;flex-direction:column}
+.profile-menu button{border:0;background:transparent;text-align:left;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--ink);padding:10px 12px;border-radius:8px;cursor:pointer}
+.profile-menu button:hover{background:var(--primary-soft)}
+.profile-menu button.danger{color:var(--danger)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));z-index:15}
+.bn-item{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0;cursor:pointer;color:var(--muted);font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px}
+.bn-item svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bn-item.on{color:var(--primary-ink)}
+.has-bottom-nav{padding-bottom:86px}
+.stat-tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 12px}
+.stat-tile .lbl{font-size:10.5px;color:var(--muted);margin-bottom:5px}
+.stat-tile .val{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;line-height:1;color:var(--ink)}
+.stat-tile .goal{font-size:10.5px;color:var(--muted);margin:3px 0 8px}
+.stat-tile .bar{height:5px;border-radius:3px;background:var(--chart-track);overflow:hidden}
+.stat-tile .bar>div{height:100%;border-radius:3px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.dashed-btn{width:100%;border:1px dashed var(--line);background:var(--card);color:var(--primary-ink);font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;padding:13px;border-radius:12px;cursor:pointer;margin-bottom:14px}
+.dashed-btn:hover{border-color:var(--primary-ink)}
 .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
 .data-table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
 .data-table th{background:var(--primary-soft);color:var(--primary-ink);font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;text-align:left;padding:10px 12px;position:sticky;top:0}
@@ -763,22 +783,25 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 <div id="clientAppScreen" class="hidden">
   <div class="navbar">
     <div class="brand">Progres<span>.</span></div>
-    <div class="who">
+    <div class="who" style="position:relative">
       <span id="clientWhoName"></span>
-      <button onclick="handleLogout()">Odjava</button>
+      <button class="avatar-btn" id="clientAvatarBtn" onclick="toggleClientProfileMenu(event)" aria-label="Profil">
+        <span id="clientAvatarInitials">?</span>
+      </button>
+      <div class="profile-menu hidden" id="clientProfileMenu">
+        <button onclick="showClientGradiva()">Gradiva</button>
+        <button onclick="showClientNarocnina()">Naročnina</button>
+        <button class="danger" onclick="handleLogout()">Odjava</button>
+      </div>
     </div>
   </div>
-  <div class="wrap">
-    <div class="toplevel-tabs" id="clientTopTabs">
-      <button class="tt on" id="ctabProgramsTop" onclick="showClientPrograms()">Programi</button>
-      <button class="tt" id="ctabNutritionTop" onclick="showClientNutrition()">Prehrana</button>
-      <button class="tt" id="ctabProgressTop" onclick="showClientProgress()">Napredek</button>
-      <button class="tt" id="ctabChatTop" onclick="showClientChat()">Klepet</button>
-      <button class="tt" id="ctabGradivaTop" onclick="showClientGradiva()">Gradiva</button>
-      <button class="tt" id="ctabNarocninaTop" onclick="showClientNarocnina()">Naročnina</button>
+  <div class="wrap has-bottom-nav">
+
+    <div id="clientScreenDanes">
+      <div id="danesContent"></div>
     </div>
 
-    <div id="clientScreenPrograms">
+    <div id="clientScreenPrograms" class="hidden">
       <div class="client-header">
         <h2>Tvoji programi</h2>
         <div class="meta" id="clientMeta"></div>
@@ -856,6 +879,29 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       </div>
       <div id="clientGradivaList"></div>
     </div>
+
+    <nav class="bottom-nav" id="clientBottomNav">
+      <button class="bn-item on" id="bnDanes" onclick="showClientDanes()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+        <span>Danes</span>
+      </button>
+      <button class="bn-item" id="bnTrening" onclick="showClientPrograms()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>
+        <span>Trening</span>
+      </button>
+      <button class="bn-item" id="bnPrehrana" onclick="showClientNutrition()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M6 3v8a2 2 0 004 0V3M8 11v10M18 3c-1.5 2-2 4-2 6s.5 3 2 3v9"/></svg>
+        <span>Prehrana</span>
+      </button>
+      <button class="bn-item" id="bnNapredek" onclick="showClientProgress()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        <span>Napredek</span>
+      </button>
+      <button class="bn-item" id="bnKlepet" onclick="showClientChat()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M21 12a8 8 0 01-8 8H4l2-3a8 8 0 1115-5z"/></svg>
+        <span>Klepet</span>
+      </button>
+    </nav>
 
     <div id="clientScreenNarocnina" class="hidden">
       <div class="client-header">
@@ -1052,7 +1098,10 @@ async function enterApp(){
           if(t.brand_barva) applyBrandColor(t.brand_barva);
         }
       }catch(e){}
+      const zac = (clientProfile.ime || '?').split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+      document.getElementById('clientAvatarInitials').textContent = zac;
       await loadClientOwnPrograms();
+      showClientDanes();
       return;
     }
   }catch(e){ /* ni stranka, nadaljuj kot trener */ }
@@ -2094,18 +2143,141 @@ async function deleteProgramTemplate(id){
 // ---------- STRANKIN POGLED ----------
 // ---------- STRANKIN POGLED ----------
 function hideAllClientScreens(){
-  ['clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress','clientScreenNutrition','clientScreenGradiva'].forEach(function(id){
-    document.getElementById(id).classList.add('hidden');
+  ['clientScreenDanes','clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress','clientScreenNutrition','clientScreenGradiva'].forEach(function(id){
+    const e = document.getElementById(id); if(e) e.classList.add('hidden');
   });
-  ['ctabProgramsTop','ctabChatTop','ctabNarocninaTop','ctabProgressTop','ctabNutritionTop','ctabGradivaTop'].forEach(function(id){
-    document.getElementById(id).classList.remove('on');
+  ['bnDanes','bnTrening','bnPrehrana','bnNapredek','bnKlepet'].forEach(function(id){
+    const e = document.getElementById(id); if(e) e.classList.remove('on');
   });
+  closeClientProfileMenu();
+}
+function setBottomTab(id){
+  const e = document.getElementById(id);
+  if(e) e.classList.add('on');
+}
+function toggleClientProfileMenu(ev){
+  if(ev) ev.stopPropagation();
+  document.getElementById('clientProfileMenu').classList.toggle('hidden');
+}
+function closeClientProfileMenu(){
+  const m = document.getElementById('clientProfileMenu');
+  if(m) m.classList.add('hidden');
+}
+document.addEventListener('click', function(e){
+  const m = document.getElementById('clientProfileMenu');
+  if(!m || m.classList.contains('hidden')) return;
+  if(!m.contains(e.target) && e.target.id !== 'clientAvatarBtn') closeClientProfileMenu();
+});
+
+// ---------- ZASLON "DANES" ----------
+function showClientDanes(){
+  stopClientChatPolling();
+  hideAllClientScreens();
+  document.getElementById('clientScreenDanes').classList.remove('hidden');
+  setBottomTab('bnDanes');
+  renderDanes();
+}
+async function renderDanes(){
+  const wrap = document.getElementById('danesContent');
+  if(!clientProfile){ wrap.innerHTML = ''; return; }
+  const ime = (clientProfile.ime || '').split(' ')[0];
+  wrap.innerHTML = '<div class="client-header"><h2>Živjo, ' + escapeHtml(ime) + '</h2>'
+    + (clientProfile.cilj ? '<div class="meta">Cilj: ' + escapeHtml(clientProfile.cilj) + '</div>' : '') + '</div>'
+    + '<div id="danesTrening"></div><div id="danesStats"></div><div id="danesTeza"></div>'
+    + '<button class="dashed-btn" onclick="showClientProgress()">+ Vpiši današnjo meritev</button>'
+    + '<div id="danesKlepet"></div>';
+
+  const danesIso = new Date().toISOString().slice(0,10);
+  try{
+    const [mRes, pRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/meritve?stranka_id=eq.' + clientProfile.id + '&select=*&order=datum.asc', { headers: authHeaders(), cache:'no-store' }),
+      fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientProfile.id + '&select=program_id,programi(id,ime,program_vaje(serije))', { headers: authHeaders(), cache:'no-store' })
+    ]);
+    const meritve = mRes.ok ? await mRes.json() : [];
+    const dod = pRes.ok ? await pRes.json() : [];
+    const danesM = meritve.filter(function(m){ return m.datum === danesIso; })[0] || {};
+
+    // današnji trening
+    const prog = dod.length > 0 ? dod[0].programi : null;
+    const tw = document.getElementById('danesTrening');
+    if(prog){
+      const stVaj = (prog.program_vaje || []).length;
+      const stSerij = (prog.program_vaje || []).reduce(function(a,v){ return a + (v.serije || 0); }, 0);
+      tw.innerHTML = '<div class="card" style="margin-bottom:14px">'
+        + '<div style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--primary-ink);margin-bottom:7px">Današnji trening</div>'
+        + '<div style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:18px;color:var(--ink)">' + escapeHtml(prog.ime) + '</div>'
+        + '<div style="font-size:12.5px;color:var(--muted);margin-top:5px">' + vajaOblika(stVaj) + ' · ' + stSerij + ' serij</div>'
+        + '<button class="btn" style="margin-top:14px" onclick="openClientProgramFromDanes(\'' + prog.id + '\')">Začni trening</button>'
+        + '</div>';
+    } else {
+      tw.innerHTML = '<div class="empty" style="margin-bottom:14px">Trener ti še ni dodelil programa.</div>';
+    }
+
+    // kartice ciljev
+    const tiles = [];
+    if(clientProfile.cilj_kcal) tiles.push({ lbl:'Kalorije', val: danesM.kcal_zauzito || 0, goal: clientProfile.cilj_kcal, unit:'kcal' });
+    if(clientProfile.cilj_koraki) tiles.push({ lbl:'Koraki', val: danesM.koraki || 0, goal: clientProfile.cilj_koraki, unit:'' });
+    if(clientProfile.cilj_spanje_ure) tiles.push({ lbl:'Spanje', val: danesM.spanje_ure || 0, goal: clientProfile.cilj_spanje_ure, unit:'ur' });
+    document.getElementById('danesStats').innerHTML = tiles.length === 0 ? '' :
+      '<div class="grid3">' + tiles.map(function(t){
+        const pct = Math.min(100, Math.round((t.val / t.goal) * 100));
+        const barva = pct >= 100 ? 'var(--mint)' : 'var(--primary)';
+        return '<div class="stat-tile"><div class="lbl">' + t.lbl + '</div>'
+          + '<div class="val">' + t.val + '</div>'
+          + '<div class="goal">/ ' + t.goal + ' ' + t.unit + '</div>'
+          + '<div class="bar"><div style="width:' + pct + '%;background:' + barva + '"></div></div></div>';
+      }).join('') + '</div>';
+
+    // teža
+    const tezaE = meritve.filter(function(m){ return m.teza !== null && m.teza !== undefined; });
+    const tzw = document.getElementById('danesTeza');
+    if(tezaE.length > 1){
+      const zadnja = tezaE[tezaE.length-1].teza;
+      const pred30 = tezaE.filter(function(m){ return (Date.now() - new Date(m.datum).getTime()) <= 31*86400000; });
+      const izhod = (pred30[0] || tezaE[0]).teza;
+      const razlika = Math.round((zadnja - izhod)*10)/10;
+      tzw.innerHTML = '<div class="card" style="margin-bottom:14px">'
+        + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px">'
+        + '<div><div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">Teža</div>'
+        + '<div style="font-size:11.5px;color:var(--muted);margin-top:2px">' + zadnja + ' kg' + (clientProfile.ciljna_teza ? ' · cilj ' + clientProfile.ciljna_teza + ' kg' : '') + '</div></div>'
+        + '<div style="background:var(--ok-soft);color:var(--ok);font-family:\'Archivo\',sans-serif;font-weight:700;font-size:11px;padding:5px 10px;border-radius:999px;white-space:nowrap">' + (razlika > 0 ? '+' : '') + razlika + ' kg / 30 dni</div>'
+        + '</div>' + sparkline(tezaE) + '</div>';
+    } else { tzw.innerHTML = ''; }
+
+    // zadnje sporočilo trenerja
+    const cRes = await fetch(SUPABASE_URL + '/rest/v1/sporocila?stranka_id=eq.' + clientProfile.id + '&posiljatelj=eq.trener&select=besedilo,poslano&order=poslano.desc&limit=1', { headers: authHeaders(), cache:'no-store' });
+    const zadnje = cRes.ok ? (await cRes.json())[0] : null;
+    document.getElementById('danesKlepet').innerHTML = zadnje
+      ? '<div class="card" style="display:flex;gap:12px;align-items:flex-start;cursor:pointer" onclick="showClientChat()">'
+        + '<div class="ini" style="width:36px;height:36px;border-radius:50%;background:var(--primary-soft);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-family:\'Archivo\',sans-serif;font-weight:700;font-size:12px;flex-shrink:0">T</div>'
+        + '<div style="min-width:0"><div style="font-size:13px;font-weight:600;margin-bottom:3px">Od trenerja</div>'
+        + '<div style="font-size:12.5px;color:var(--muted);line-height:1.5">' + escapeHtml(zadnje.besedilo || '') + '</div></div>'
+        + '</div>'
+      : '';
+  }catch(err){ /* tiho */ }
+}
+function sparkline(entries){
+  const vals = entries.map(function(m){ return m.teza; });
+  const min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  const razpon = (max - min) || 1;
+  const W = 300, H = 78, pad = 8;
+  const stepX = entries.length > 1 ? W / (entries.length - 1) : 0;
+  const pts = entries.map(function(m,i){
+    return (stepX*i).toFixed(1) + ',' + (pad + (1 - (m.teza - min)/razpon) * (H - pad*2)).toFixed(1);
+  }).join(' ');
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="width:100%;height:78px;display:block" role="img" aria-label="Gibanje teže">'
+    + '<polyline points="' + pts + '" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    + '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:6px">'
+    + '<span>' + formatShortDate(entries[0].datum) + '</span><span>' + formatShortDate(entries[entries.length-1].datum) + '</span></div>';
+}
+function openClientProgramFromDanes(programId){
+  showClientPrograms();
+  setTimeout(function(){ openClientProgramDetail(programId); }, 260);
 }
 async function showClientGradiva(){
   stopClientChatPolling();
   hideAllClientScreens();
   document.getElementById('clientScreenGradiva').classList.remove('hidden');
-  document.getElementById('ctabGradivaTop').classList.add('on');
   const wrap = document.getElementById('clientGradivaList');
   wrap.innerHTML = '<div class="empty">Nalagam…</div>';
   try{
@@ -2126,34 +2298,33 @@ function showClientPrograms(){
   stopClientChatPolling();
   hideAllClientScreens();
   document.getElementById('clientScreenPrograms').classList.remove('hidden');
-  document.getElementById('ctabProgramsTop').classList.add('on');
+  setBottomTab('bnTrening');
   loadClientOwnPrograms();
 }
 function showClientNutrition(){
   stopClientChatPolling();
   hideAllClientScreens();
   document.getElementById('clientScreenNutrition').classList.remove('hidden');
-  document.getElementById('ctabNutritionTop').classList.add('on');
+  setBottomTab('bnPrehrana');
   loadClientNutrition();
 }
 function showClientChat(){
   hideAllClientScreens();
   document.getElementById('clientScreenChat').classList.remove('hidden');
-  document.getElementById('ctabChatTop').classList.add('on');
+  setBottomTab('bnKlepet');
   startClientChatPolling();
 }
 function showClientNarocnina(){
   stopClientChatPolling();
   hideAllClientScreens();
   document.getElementById('clientScreenNarocnina').classList.remove('hidden');
-  document.getElementById('ctabNarocninaTop').classList.add('on');
   loadClientPaketi();
 }
 function showClientProgress(){
   stopClientChatPolling();
   hideAllClientScreens();
   document.getElementById('clientScreenProgress').classList.remove('hidden');
-  document.getElementById('ctabProgressTop').classList.add('on');
+  setBottomTab('bnNapredek');
   document.getElementById('cMeritevForm').classList.add('hidden');
   loadClientMeritve();
 }
