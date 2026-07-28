@@ -35,6 +35,11 @@ body.dark-theme .tabs{ background:#1B2224; }
 .data-table .num{text-align:right}
 .data-table .warn{color:var(--danger);font-weight:600}
 .data-table .dim{color:var(--muted)}
+.file-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-bottom:8px}
+.file-row .fic{font-size:20px;flex-shrink:0}
+.file-row .finfo{flex:1;min-width:0}
+.file-row .finfo b{display:block;font-size:13.5px;font-weight:600}
+.file-row .finfo span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--ink);min-height:100vh}
 h1,h2,h3{font-family:'Archivo',sans-serif}
@@ -534,6 +539,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <button class="tt" id="stabBranding" onclick="showSettingsSection('branding')">Branding</button>
         <button class="tt" id="stabSplosno" onclick="showSettingsSection('splosno')">Splošno</button>
         <button class="tt" id="stabStranke" onclick="showSettingsSection('stranke')">Stranke</button>
+        <button class="tt" id="stabDatoteke" onclick="showSettingsSection('datoteke')">Datoteke</button>
         <button class="tt" id="stabObvestila" onclick="showSettingsSection('obvestila')">Obvestila</button>
       </div>
 
@@ -620,6 +626,44 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       </div>
 
       <!-- OBVESTILA -->
+      <!-- DATOTEKE -->
+      <div id="settingsSectionDatoteke" class="settings-section hidden" style="max-width:none">
+        <div class="sec-head">
+          <h2 style="font-size:14.5px">Učna gradiva in dokumenti</h2>
+          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleGradivoForm()">+ Naloži datoteko</button>
+        </div>
+
+        <div class="card hidden" id="gradivoForm" style="max-width:520px">
+          <div class="field"><label>Naziv *</label><input type="text" id="grNaziv" placeholder="npr. Vodnik po pravilni tehniki počepa"></div>
+          <div class="field"><label>Kratek opis (neobvezno)</label><input type="text" id="grOpis" placeholder="npr. za začetnike, 12 strani"></div>
+          <div class="field"><label>Kategorija</label>
+            <select id="grKategorija" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px">
+              <option value="splosno">Splošno</option>
+              <option value="trening">Trening</option>
+              <option value="prehrana">Prehrana</option>
+              <option value="predstavitev">Predstavitev</option>
+              <option value="obrazec">Obrazec / dokument</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Datoteka (največ 50 MB)</label>
+            <input type="file" id="grDatoteka" accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.mp4,.mov" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13px;background:var(--card)">
+          </div>
+          <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
+            <input type="checkbox" id="grDeljeno" checked style="width:19px;height:19px;accent-color:var(--primary)"> Vidno strankam
+          </label>
+          <button class="btn" id="grSaveBtn" onclick="uploadGradivo()">Naloži</button>
+        </div>
+
+        <div id="gradivaList" style="margin-bottom:28px"></div>
+
+        <div class="sec-head"><h2 style="font-size:14.5px">Slike obrokov</h2></div>
+        <div id="filesMealImages" style="margin-bottom:28px"></div>
+
+        <div class="sec-head"><h2 style="font-size:14.5px">Video povezave vaj</h2></div>
+        <div id="filesExerciseVideos"></div>
+      </div>
+
       <div id="settingsSectionObvestila" class="settings-section hidden">
         <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
@@ -725,6 +769,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <button class="tt" id="ctabNutritionTop" onclick="showClientNutrition()">Prehrana</button>
       <button class="tt" id="ctabProgressTop" onclick="showClientProgress()">Napredek</button>
       <button class="tt" id="ctabChatTop" onclick="showClientChat()">Klepet</button>
+      <button class="tt" id="ctabGradivaTop" onclick="showClientGradiva()">Gradiva</button>
       <button class="tt" id="ctabNarocninaTop" onclick="showClientNarocnina()">Naročnina</button>
     </div>
 
@@ -795,6 +840,14 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <div class="card hidden" id="cStepsChartCard"></div>
       <div class="card hidden" id="cSleepChartCard"></div>
       <div id="cProgressList"></div>
+    </div>
+
+    <div id="clientScreenGradiva" class="hidden">
+      <div class="client-header">
+        <h2>Gradiva</h2>
+        <div class="meta">Dokumenti in učna gradiva od tvojega trenerja</div>
+      </div>
+      <div id="clientGradivaList"></div>
     </div>
 
     <div id="clientScreenNarocnina" class="hidden">
@@ -1059,12 +1112,16 @@ function openSettingsMenu(){
   loadSettingsData();
 }
 function showSettingsSection(name){
-  ['profil','branding','splosno','stranke','obvestila'].forEach(function(s){
+  ['profil','branding','splosno','stranke','datoteke','obvestila'].forEach(function(s){
     document.getElementById('settingsSection' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('hidden', s !== name);
     document.getElementById('stab' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('on', s === name);
   });
   if(name === 'stranke'){
     if(paketi.length === 0){ loadPaketi().then(renderClientsTable); } else { renderClientsTable(); }
+  }
+  if(name === 'datoteke'){
+    loadGradiva();
+    renderFileInventory();
   }
 }
 async function loadSettingsData(){
@@ -1232,6 +1289,151 @@ function exportClientsCsv(){
   a.click();
   URL.revokeObjectURL(url);
   toast('CSV izvožen ✓');
+}
+// ---------- DATOTEKE / GRADIVA ----------
+let gradiva = [];
+function toggleGradivoForm(){
+  ['grNaziv','grOpis'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('grDatoteka').value = '';
+  document.getElementById('grDeljeno').checked = true;
+  document.getElementById('gradivoForm').classList.toggle('hidden');
+}
+function formatBytes(b){
+  if(!b) return '—';
+  if(b < 1024) return b + ' B';
+  if(b < 1048576) return Math.round(b/1024) + ' KB';
+  return (Math.round(b/1048576*10)/10) + ' MB';
+}
+function fileIcon(mime, ime){
+  const n = (ime || '').toLowerCase();
+  if(n.endsWith('.pdf')) return '📕';
+  if(n.endsWith('.ppt') || n.endsWith('.pptx')) return '📊';
+  if(n.endsWith('.doc') || n.endsWith('.docx')) return '📄';
+  if(n.endsWith('.xls') || n.endsWith('.xlsx')) return '📗';
+  if((mime||'').indexOf('image/') === 0) return '🖼️';
+  if((mime||'').indexOf('video/') === 0) return '🎬';
+  return '📎';
+}
+async function uploadGradivo(){
+  const naziv = document.getElementById('grNaziv').value.trim();
+  const fileInput = document.getElementById('grDatoteka');
+  const file = fileInput.files[0];
+  if(!naziv){ toast('Vpiši naziv gradiva.'); return; }
+  if(!file){ toast('Izberi datoteko.'); return; }
+  if(file.size > 52428800){ toast('Datoteka je prevelika (največ 50 MB).'); return; }
+  const btn = document.getElementById('grSaveBtn');
+  btn.disabled = true; btn.textContent = 'Nalagam…';
+  try{
+    const varnoIme = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const pot = session.user.id + '/' + Date.now() + '_' + varnoIme;
+    const upRes = await fetch(SUPABASE_URL + '/storage/v1/object/gradiva/' + pot, {
+      method:'POST',
+      headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': SUPABASE_ANON_KEY, 'x-upsert': 'true' },
+      body: file
+    });
+    if(!upRes.ok){ const e = await upRes.json().catch(function(){return{};}); throw new Error(e.message || 'Napaka pri nalaganju datoteke v shrambo.'); }
+    const javniUrl = SUPABASE_URL + '/storage/v1/object/public/gradiva/' + pot;
+    const res = await fetch(SUPABASE_URL + '/rest/v1/gradiva', {
+      method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
+      body: JSON.stringify({
+        trener_id: session.user.id, naziv: naziv,
+        opis: document.getElementById('grOpis').value.trim() || null,
+        kategorija: document.getElementById('grKategorija').value,
+        datoteka_url: javniUrl, pot_v_shrambi: pot, ime_datoteke: file.name,
+        velikost_bytes: file.size, mime_tip: file.type || null,
+        deljeno_s_strankami: document.getElementById('grDeljeno').checked
+      })
+    });
+    if(!res.ok) throw new Error('Datoteka je naložena, zapis pa ni uspel.');
+    gradiva.push((await res.json())[0]);
+    document.getElementById('gradivoForm').classList.add('hidden');
+    renderGradiva();
+    toast('Gradivo naloženo ✓');
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Naloži'; }
+}
+async function loadGradiva(){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/gradiva?trener_id=eq.' + session.user.id + '&select=*&order=ustvarjeno.desc', { headers: authHeaders(), cache:'no-store' });
+    if(!res.ok) throw new Error('Napaka pri nalaganju gradiv.');
+    gradiva = await res.json();
+    renderGradiva();
+  }catch(err){ toast(err.message); }
+}
+async function deleteGradivo(id){
+  const g = gradiva.find(function(x){ return x.id === id; });
+  if(!g) return;
+  if(!confirm('Izbrišeš gradivo "' + g.naziv + '"?')) return;
+  try{
+    if(g.pot_v_shrambi){
+      await fetch(SUPABASE_URL + '/storage/v1/object/gradiva/' + g.pot_v_shrambi, {
+        method:'DELETE', headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': SUPABASE_ANON_KEY }
+      });
+    }
+    const res = await fetch(SUPABASE_URL + '/rest/v1/gradiva?id=eq.' + id, { method:'DELETE', headers: authHeaders() });
+    if(!res.ok) throw new Error('Napaka pri brisanju.');
+    gradiva = gradiva.filter(function(x){ return x.id !== id; });
+    renderGradiva();
+    toast('Gradivo izbrisano.');
+  }catch(err){ toast(err.message); }
+}
+async function toggleGradivoDeljeno(id){
+  const g = gradiva.find(function(x){ return x.id === id; });
+  if(!g) return;
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/gradiva?id=eq.' + id, {
+      method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}),
+      body: JSON.stringify({ deljeno_s_strankami: !g.deljeno_s_strankami })
+    });
+    if(!res.ok) throw new Error('Napaka pri spremembi.');
+    g.deljeno_s_strankami = !g.deljeno_s_strankami;
+    renderGradiva();
+  }catch(err){ toast(err.message); }
+}
+function renderGradiva(){
+  const wrap = document.getElementById('gradivaList');
+  if(gradiva.length === 0){
+    wrap.innerHTML = '<div class="empty">Še nisi naložil nobenega gradiva. Klikni "+ Naloži datoteko".</div>';
+    return;
+  }
+  const skupaj = gradiva.reduce(function(a,g){ return a + (g.velikost_bytes||0); }, 0);
+  wrap.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">' + gradiva.length + ' datotek · skupaj ' + formatBytes(skupaj) + '</div>'
+    + gradiva.map(function(g){
+    return '<div class="file-row">'
+      + '<span class="fic">' + fileIcon(g.mime_tip, g.ime_datoteke) + '</span>'
+      + '<div class="finfo">'
+      + '<b>' + escapeHtml(g.naziv) + '</b>'
+      + '<span>' + escapeHtml(g.kategorija || 'splošno') + ' · ' + formatBytes(g.velikost_bytes) + (g.opis ? ' · ' + escapeHtml(g.opis) : '') + '</span>'
+      + '</div>'
+      + '<button class="btn-small" style="background:' + (g.deljeno_s_strankami ? 'var(--ok-soft);color:var(--ok)' : 'var(--line);color:var(--muted)') + '" onclick="toggleGradivoDeljeno(\'' + g.id + '\')">' + (g.deljeno_s_strankami ? 'Vidno strankam' : 'Skrito') + '</button>'
+      + '<a class="btn-small" style="background:var(--primary-soft);color:var(--primary);text-decoration:none" href="' + g.datoteka_url + '" target="_blank" rel="noopener">Odpri</a>'
+      + '<button class="btn-small" onclick="deleteGradivo(\'' + g.id + '\')">×</button>'
+      + '</div>';
+  }).join('');
+}
+function renderFileInventory(){
+  const mealWrap = document.getElementById('filesMealImages');
+  const slike = mealLibrary.filter(function(m){ return m.slika_url; });
+  mealWrap.innerHTML = slike.length === 0
+    ? '<div class="empty">Noben obrok še nima slike.</div>'
+    : '<div style="display:flex;flex-wrap:wrap;gap:10px">' + slike.map(function(m){
+        return '<div style="width:96px" title="' + escapeHtml(m.naziv) + '">'
+          + '<img src="' + m.slika_url + '" style="width:96px;height:96px;object-fit:cover;border-radius:10px;display:block;border:1px solid var(--line)">'
+          + '<div style="font-size:11px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.naziv) + '</div>'
+          + '</div>';
+      }).join('') + '</div>';
+
+  const vidWrap = document.getElementById('filesExerciseVideos');
+  const videi = vaje.filter(function(v){ return v.video_url; });
+  vidWrap.innerHTML = videi.length === 0
+    ? '<div class="empty">Nobena vaja še nima video povezave.</div>'
+    : videi.map(function(v){
+        return '<div class="file-row">'
+          + '<span class="fic">🎬</span>'
+          + '<div class="finfo"><b>' + escapeHtml(v.ime) + '</b><span style="word-break:break-all">' + escapeHtml(v.video_url) + '</span></div>'
+          + '<a class="btn-small" style="background:var(--primary-soft);color:var(--primary);text-decoration:none" href="' + escapeHtml(v.video_url) + '" target="_blank" rel="noopener">Odpri</a>'
+          + '</div>';
+      }).join('');
 }
 function showClients(){
   hideAllScreens();
@@ -1841,12 +2043,33 @@ async function deleteProgramTemplate(id){
 // ---------- STRANKIN POGLED ----------
 // ---------- STRANKIN POGLED ----------
 function hideAllClientScreens(){
-  ['clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress','clientScreenNutrition'].forEach(function(id){
+  ['clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress','clientScreenNutrition','clientScreenGradiva'].forEach(function(id){
     document.getElementById(id).classList.add('hidden');
   });
-  ['ctabProgramsTop','ctabChatTop','ctabNarocninaTop','ctabProgressTop','ctabNutritionTop'].forEach(function(id){
+  ['ctabProgramsTop','ctabChatTop','ctabNarocninaTop','ctabProgressTop','ctabNutritionTop','ctabGradivaTop'].forEach(function(id){
     document.getElementById(id).classList.remove('on');
   });
+}
+async function showClientGradiva(){
+  stopClientChatPolling();
+  hideAllClientScreens();
+  document.getElementById('clientScreenGradiva').classList.remove('hidden');
+  document.getElementById('ctabGradivaTop').classList.add('on');
+  const wrap = document.getElementById('clientGradivaList');
+  wrap.innerHTML = '<div class="empty">Nalagam…</div>';
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/gradiva?trener_id=eq.' + clientProfile.trener_id + '&deljeno_s_strankami=eq.true&select=*&order=ustvarjeno.desc', { headers: authHeaders(), cache:'no-store' });
+    if(!res.ok) throw new Error('Napaka pri nalaganju gradiv.');
+    const rows = await res.json();
+    if(rows.length === 0){ wrap.innerHTML = '<div class="empty">Trener ti še ni delil nobenega gradiva.</div>'; return; }
+    wrap.innerHTML = rows.map(function(g){
+      return '<div class="file-row">'
+        + '<span class="fic">' + fileIcon(g.mime_tip, g.ime_datoteke) + '</span>'
+        + '<div class="finfo"><b>' + escapeHtml(g.naziv) + '</b><span>' + escapeHtml(g.kategorija || 'splošno') + ' · ' + formatBytes(g.velikost_bytes) + (g.opis ? ' · ' + escapeHtml(g.opis) : '') + '</span></div>'
+        + '<a class="btn-small" style="background:var(--primary-soft);color:var(--primary);text-decoration:none" href="' + g.datoteka_url + '" target="_blank" rel="noopener">Odpri</a>'
+        + '</div>';
+    }).join('');
+  }catch(err){ wrap.innerHTML = '<div class="empty">Napaka pri nalaganju.</div>'; }
 }
 function showClientPrograms(){
   stopClientChatPolling();
