@@ -12,7 +12,7 @@
   --primary:#7CC4F2; --primary-soft:#EAF4FC; --primary-ink:#2B8FD6; --on-primary:#091420;
   --accent:#F2A93B; --accent-soft:#FBEFD9;
   --danger:#D64545; --danger-soft:#FBE7E7; --ok:#17805A; --ok-soft:#E4F7ED;
-  --line:#D8E4EF; --r:14px;
+  --line:#D8E4EF; --r:14px; --r-sm:10px;
   --mint:#6FE3A8; --mint-strong:#17805A; --chart-track:#E3EBF3; --chart-under:#BFE0F7; --sidebar:#123049;
 }
 body.dark-theme{
@@ -42,6 +42,38 @@ body.dark-theme .tabs{ background:#1B2224; }
 .has-bottom-nav{padding-bottom:86px}
 .trainer-nav{display:none}
 .side-nav{display:none}
+/* --- gumbi, značke, polja po predlogi --- */
+.btn{border-radius:var(--r-sm,10px);font-size:14px}
+.btn-inline{width:auto;padding:10px 16px}
+.btn-mint{background:var(--mint);color:#091420}
+.badge-ok,.badge-mid,.badge-bad{font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.badge-ok{background:var(--ok-soft);color:var(--mint-strong)}
+.badge-mid{background:var(--primary-soft);color:var(--primary-ink)}
+/* --- serije kot čipi --- */
+.sets-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.set{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:6px 9px;background:var(--card)}
+.set .chk{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;flex-shrink:0;background:var(--card)}
+.set.done .chk{background:var(--mint);border-color:var(--mint);color:#091420}
+.set input{width:52px;border:0;background:transparent;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:var(--ink);padding:2px 0;text-align:center}
+.set input:focus{outline:0;border-bottom:1.5px solid var(--primary-ink)}
+.set input.reps-in{width:38px;font-weight:400;color:var(--muted)}
+.set .x{font-size:11.5px;color:var(--muted)}
+.ex-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ex-head em{font-style:normal;font-size:12.5px;color:var(--muted);margin-left:8px}
+/* --- glava zaslona Danes --- */
+.danes-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.danes-head h1{font-family:'Archivo',sans-serif;font-weight:800;font-size:24px;color:var(--ink)}
+.danes-head .meta{font-size:13px;color:var(--muted);margin-top:4px}
+.stat-strip{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 16px;text-align:center;min-width:96px}
+.stat b{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:var(--ink)}
+.stat b em{font-style:normal;font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:var(--muted)}
+.stat span{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
+.eyebrow{font-family:'Archivo',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--primary-ink);margin-bottom:7px}
+.note-box{background:var(--primary-soft);color:var(--primary-ink);font-size:12.5px;line-height:1.5;border-radius:var(--r-sm,10px);padding:11px 14px;margin-bottom:16px}
+/* --- seznam strank pri trenerju --- */
+.group-label{font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:14px 6px 8px}
+.group-label.warn{color:var(--danger)}
 @media (min-width:1024px){
   .side-nav{display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:236px;background:var(--sidebar);padding:20px 12px 14px;z-index:12}
   .sn-brand{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:#fff;padding:0 12px 18px}
@@ -81,13 +113,6 @@ body.dark-theme .tabs{ background:#1B2224; }
   .trainer-nav{display:flex}
   #appScreen .wrap{padding-bottom:86px}
 }
-.stat-tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 12px}
-.stat-tile .lbl{font-size:10.5px;color:var(--muted);margin-bottom:5px}
-.stat-tile .val{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;line-height:1;color:var(--ink)}
-.stat-tile .goal{font-size:10.5px;color:var(--muted);margin:3px 0 8px}
-.stat-tile .bar{height:5px;border-radius:3px;background:var(--chart-track);overflow:hidden}
-.stat-tile .bar>div{height:100%;border-radius:3px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .dashed-btn{width:100%;border:1px dashed var(--line);background:var(--card);color:var(--primary-ink);font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;padding:13px;border-radius:12px;cursor:pointer;margin-bottom:14px}
 .dashed-btn:hover{border-color:var(--primary-ink)}
 .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
@@ -238,10 +263,6 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .chat-attach-img{max-width:200px;border-radius:10px;display:block;cursor:pointer}
 .chat-attach-doc{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
 .ex-log-block{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#FAFCFB}
-.set-row{display:flex;align-items:center;gap:8px;margin-top:6px}
-.set-row .schk{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;flex-shrink:0}
-.set-row.set-done .schk{background:var(--ok);border-color:var(--ok);color:#fff}
-.set-row input{width:0;flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;font-family:'Inter',sans-serif}
 .chat-attach-doc .doc-ic{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .chat-msg.them .chat-attach-doc .doc-ic{background:var(--primary-soft)}
 .chat-attach-doc .doc-name{font-size:12.5px;font-weight:600;word-break:break-all}
@@ -329,12 +350,13 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <div class="kpi"><b id="kpiToday">0</b><span>dodanih danes</span></div>
       </div>
 
-      <div class="sec-head"><h2 style="font-size:14.5px">Potrebuje pozornost</h2></div>
+      <div class="group-label warn">Potrebuje pozornost</div>
       <div id="needsAttentionList" style="margin-bottom:24px"></div>
 
-      <div class="sec-head">
-        <h2>Stranke</h2>
-        <button class="add-btn" onclick="toggleAddForm()">+ Dodaj stranko</button>
+      <div class="group-label">Vse stranke</div>
+      <div class="sec-head" style="margin-top:0">
+        <h2 style="font-size:14.5px">Seznam</h2>
+        <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleAddForm()">+ Dodaj</button>
       </div>
 
       <div class="card hidden" id="addForm">
@@ -1847,7 +1869,7 @@ function renderProgramCardHtml(p){
     return '<div class="prog-ex-row" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between"><span>' + escapeHtml(naziv) + '</span><span>' + pv.serije + ' × ' + pv.ponovitve + ' · ' + teza + video + '</span></div>' + ogrevanje + opis + '</div>';
   }).join('');
   return '<div class="program-card"><h3>' + escapeHtml(p.ime) + '</h3>'
-    + (p.opis ? '<div style="background:var(--accent-soft);color:#7A5210;font-size:12.5px;border-radius:9px;padding:9px 12px;margin-bottom:10px;line-height:1.5">' + escapeHtml(p.opis) + '</div>' : '')
+    + (p.opis ? '<div class="note-box">' + escapeHtml(p.opis) + '</div>' : '')
     + (rows || '<span style="font-size:12.5px;color:var(--muted)">Brez vaj</span>') + '</div>';
 }
 async function loadTrainingLog(clientId){
@@ -2312,10 +2334,15 @@ async function renderDanes(){
   const wrap = document.getElementById('danesContent');
   if(!clientProfile){ wrap.innerHTML = ''; return; }
   const ime = (clientProfile.ime || '').split(' ')[0];
-  wrap.innerHTML = '<div class="client-header"><h2>Živjo, ' + escapeHtml(ime) + '</h2>'
-    + (clientProfile.cilj ? '<div class="meta">Cilj: ' + escapeHtml(clientProfile.cilj) + '</div>' : '') + '</div>'
+  const DNEVI = ['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'];
+  const d = new Date();
+  const datumTxt = DNEVI[d.getDay()] + ', ' + d.getDate() + '. ' + ['januar','februar','marec','april','maj','junij','julij','avgust','september','oktober','november','december'][d.getMonth()];
+  wrap.innerHTML = '<div class="danes-head">'
+    + '<div><h1>Živjo, ' + escapeHtml(ime) + '</h1><div class="meta">' + datumTxt
+    + (clientProfile.cilj ? ' · cilj: ' + escapeHtml(clientProfile.cilj) : '') + '</div></div>'
+    + '<div id="danesStats"></div></div>'
     + '<div class="danes-split">'
-    +   '<div><div id="danesStats"></div><div id="danesTrening"></div></div>'
+    +   '<div><div id="danesTrening"></div></div>'
     +   '<div><div id="danesTeza"></div>'
     +     '<button class="dashed-btn" onclick="showClientProgress()">+ Vpiši današnjo meritev</button>'
     +     '<div id="danesKlepet"></div></div>'
@@ -2338,11 +2365,12 @@ async function renderDanes(){
       const stVaj = (prog.program_vaje || []).length;
       const stSerij = (prog.program_vaje || []).reduce(function(a,v){ return a + (v.serije || 0); }, 0);
       tw.innerHTML = '<div class="card" style="margin-bottom:14px">'
-        + '<div style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--primary-ink);margin-bottom:7px">Današnji trening</div>'
-        + '<div style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:18px;color:var(--ink)">' + escapeHtml(prog.ime) + '</div>'
-        + '<div style="font-size:12.5px;color:var(--muted);margin-top:5px">' + vajaOblika(stVaj) + ' · ' + stSerij + ' serij</div>'
-        + '<button class="btn" style="margin-top:14px" onclick="openClientProgramFromDanes(\'' + prog.id + '\')">Začni trening</button>'
-        + '</div>';
+        + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">'
+        + '<div><div class="eyebrow">Današnji trening</div>'
+        + '<div style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:20px;color:var(--ink)">' + escapeHtml(prog.ime) + '</div>'
+        + '<div style="font-size:12.5px;color:var(--muted);margin-top:5px">' + vajaOblika(stVaj) + ' · ' + stSerij + ' serij</div></div>'
+        + '<button class="btn btn-inline btn-mint" onclick="openClientProgramFromDanes(\'' + prog.id + '\')">Beleži trening</button>'
+        + '</div></div>';
     } else {
       tw.innerHTML = '<div class="empty" style="margin-bottom:14px">Trener ti še ni dodelil programa.</div>';
     }
@@ -2350,16 +2378,13 @@ async function renderDanes(){
     // kartice ciljev
     const tiles = [];
     if(clientProfile.cilj_kcal) tiles.push({ lbl:'Kalorije', val: danesM.kcal_zauzito || 0, goal: clientProfile.cilj_kcal, unit:'kcal' });
-    if(clientProfile.cilj_koraki) tiles.push({ lbl:'Koraki', val: danesM.koraki || 0, goal: clientProfile.cilj_koraki, unit:'' });
-    if(clientProfile.cilj_spanje_ure) tiles.push({ lbl:'Spanje', val: danesM.spanje_ure || 0, goal: clientProfile.cilj_spanje_ure, unit:'ur' });
+    if(clientProfile.cilj_koraki) tiles.push({ lbl:'Koraki', val: danesM.koraki || 0, goal: clientProfile.cilj_koraki, unit:'korakov' });
+    if(clientProfile.cilj_spanje_ure) tiles.push({ lbl:'Spanje', val: danesM.spanje_ure || 0, goal: clientProfile.cilj_spanje_ure, unit:'ur spanja' });
     document.getElementById('danesStats').innerHTML = tiles.length === 0 ? '' :
-      '<div class="grid3">' + tiles.map(function(t){
-        const pct = Math.min(100, Math.round((t.val / t.goal) * 100));
-        const barva = pct >= 100 ? 'var(--mint)' : 'var(--primary)';
-        return '<div class="stat-tile"><div class="lbl">' + t.lbl + '</div>'
-          + '<div class="val">' + t.val + '</div>'
-          + '<div class="goal">/ ' + t.goal + ' ' + t.unit + '</div>'
-          + '<div class="bar"><div style="width:' + pct + '%;background:' + barva + '"></div></div></div>';
+      '<div class="stat-strip">' + tiles.map(function(t){
+        const dosezen = t.val >= t.goal;
+        return '<div class="stat"><b' + (dosezen ? ' style="color:var(--mint-strong)"' : '') + '>' + t.val
+          + '<em> / ' + t.goal + '</em></b><span>' + (t.unit || t.lbl.toLowerCase()) + '</span></div>';
       }).join('') + '</div>';
 
     // teža
@@ -2668,7 +2693,7 @@ function openClientProgramDetail(programId){
   clientWorkoutState[p.id] = { exercises: sorted.map(function(pv){
     return {
       vaja_id: pv.vaja_id, ime: pv.vaje ? pv.vaje.ime : 'Vaja',
-      sets: Array.from({length: pv.serije || 3}, function(){ return { done:false, kg:'', reps: pv.ponovitve || '' }; })
+      sets: Array.from({length: pv.serije || 3}, function(){ return { done:false, kg: pv.priporocena_teza || '', reps: pv.ponovitve || '' }; })
     };
   })};
 
@@ -2679,19 +2704,19 @@ function openClientProgramDetail(programId){
     const ogrevanje = pv.ogrevalne_serije ? ('<div style="font-size:12px;color:#9A6512;margin-top:3px">Ogrevanje: ' + escapeHtml(pv.ogrevalne_serije) + '</div>') : '';
     const teza = pv.priporocena_teza ? (pv.priporocena_teza + ' kg') : 'po občutku';
     const setsHtml = Array.from({length: pv.serije || 3}, function(_, setIdx){
-      return '<div class="set-row" id="setrow_' + p.id + '_' + exIdx + '_' + setIdx + '">'
-        + '<div class="schk" onclick="toggleSetDone(\'' + p.id + '\',' + exIdx + ',' + setIdx + ')">' + (setIdx+1) + '</div>'
-        + '<span style="font-size:12px;color:var(--muted);width:52px;flex-shrink:0">' + (setIdx+1) + '. serija</span>'
-        + '<input type="number" step="0.5" placeholder="kg" inputmode="decimal" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'kg\',this.value)">'
-        + '<input type="number" placeholder="' + (pv.ponovitve||'pon.') + '" inputmode="numeric" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'reps\',this.value)">'
+      return '<div class="set" id="setrow_' + p.id + '_' + exIdx + '_' + setIdx + '">'
+        + '<span class="chk" onclick="toggleSetDone(\'' + p.id + '\',' + exIdx + ',' + setIdx + ')">' + (setIdx+1) + '</span>'
+        + '<input type="number" step="0.5" placeholder="kg" inputmode="decimal" value="' + (pv.priporocena_teza || '') + '" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'kg\',this.value)">'
+        + '<span class="x">×</span>'
+        + '<input class="reps-in" type="number" placeholder="pon" inputmode="numeric" value="' + (pv.ponovitve || '') + '" oninput="updateSetField(\'' + p.id + '\',' + exIdx + ',' + setIdx + ',\'reps\',this.value)">'
         + '</div>';
     }).join('');
     return '<div class="ex-log-block" id="suggwrap_' + p.id + '_' + exIdx + '">'
-      + '<div style="font-weight:600;font-size:14px">' + escapeHtml(naziv) + video + '</div>'
-      + '<div style="font-size:12.5px;color:var(--muted);margin-top:2px">' + (pv.serije||3) + ' × ' + (pv.ponovitve||'') + ' · priporočilo trenerja: ' + teza + '</div>'
+      + '<div class="ex-head"><div><b style="font-size:14.5px;font-weight:600">' + escapeHtml(naziv) + '</b>'
+      + '<em>' + (pv.serije||3) + ' × ' + (pv.ponovitve||'') + ' · priporočilo trenerja: ' + teza + '</em></div>' + (video ? video.replace(' · ','') : '') + '</div>'
       + '<div id="sugg_' + p.id + '_' + exIdx + '"></div>'
       + ogrevanje + opis
-      + '<div style="margin-top:8px">' + setsHtml + '</div>'
+      + '<div class="sets-wrap">' + setsHtml + '</div>'
       + '</div>';
   }).join('');
 
@@ -2699,7 +2724,7 @@ function openClientProgramDetail(programId){
   detailWrap.innerHTML = '<button class="back-btn" onclick="backToClientProgramList()">← Nazaj na programe</button>'
     + '<div class="program-card">'
     + '<h3>' + escapeHtml(p.ime) + '</h3>'
-    + (p.opis ? '<div style="background:var(--accent-soft);color:#7A5210;font-size:12.5px;border-radius:9px;padding:9px 12px;margin-bottom:10px;line-height:1.5">' + escapeHtml(p.opis) + '</div>' : '')
+    + (p.opis ? '<div class="note-box">' + escapeHtml(p.opis) + '</div>' : '')
     + exHtml
     + '<label style="font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin:14px 0 6px">Pripomba o treningu (neobvezno)</label>'
     + '<textarea id="tcomment_' + p.id + '" rows="2" placeholder="npr. kako je šlo, kje je bilo težko" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:\'Inter\',sans-serif;resize:vertical;margin-bottom:10px"></textarea>'
@@ -2721,7 +2746,7 @@ function backToClientProgramList(){
 function toggleSetDone(pid, exIdx, setIdx){
   const set = clientWorkoutState[pid].exercises[exIdx].sets[setIdx];
   set.done = !set.done;
-  document.getElementById('setrow_' + pid + '_' + exIdx + '_' + setIdx).classList.toggle('set-done', set.done);
+  document.getElementById('setrow_' + pid + '_' + exIdx + '_' + setIdx).classList.toggle('done', set.done);
 }
 function updateSetField(pid, exIdx, setIdx, field, value){
   clientWorkoutState[pid].exercises[exIdx].sets[setIdx][field] = value;
