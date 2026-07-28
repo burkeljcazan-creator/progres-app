@@ -560,7 +560,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
       <!-- BRANDING -->
       <div id="settingsSectionBranding" class="settings-section hidden">
-        <div style="background:var(--brand,var(--primary));border-radius:16px;padding:20px;margin-bottom:16px;color:#fff">
+        <div id="brandPreviewBanner" style="background:var(--primary);border-radius:16px;padding:20px;margin-bottom:16px;color:#fff">
           <div style="display:flex;align-items:center;gap:14px">
             <div id="brandPreviewIcon" style="width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:#fff;overflow:hidden;flex-shrink:0">TŽ</div>
             <div>
@@ -1042,7 +1042,7 @@ async function enterApp(){
         const t = tRows[0];
         if(t){
           if(t.brand_ime) document.querySelector('#clientAppScreen .brand').innerHTML = escapeHtml(t.brand_ime) + '<span>.</span>';
-          if(t.brand_barva) document.documentElement.style.setProperty('--primary', t.brand_barva);
+          if(t.brand_barva) applyBrandColor(t.brand_barva);
         }
       }catch(e){}
       await loadClientOwnPrograms();
@@ -1057,7 +1057,7 @@ async function enterApp(){
     const bRes = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=brand_barva,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg', { headers: authHeaders() });
     const bRows = bRes.ok ? await bRes.json() : [];
     if(bRows[0]){
-      if(bRows[0].brand_barva) document.documentElement.style.setProperty('--primary', bRows[0].brand_barva);
+      if(bRows[0].brand_barva) applyBrandColor(bRows[0].brand_barva);
       trenerjevPrag = bRows[0].prag_pozornosti_dni || 14;
       privzBeljMinGlobal = bRows[0].privzeto_beljakovine_min_gkg;
       privzBeljMaxGlobal = bRows[0].privzeto_beljakovine_max_gkg;
@@ -1174,8 +1174,42 @@ async function changePassword(){
   }catch(err){ toast(err.message); }
   finally{ btn.disabled = false; btn.textContent = 'Spremeni geslo'; }
 }
+// ---------- BARVA TRENERJA (bleda različica se izračuna samodejno) ----------
+let brandColorCurrent = '#14493B';
+function hexToHsl(hex){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16)/255;
+  const g = parseInt(h.substring(2,4),16)/255;
+  const b = parseInt(h.substring(4,6),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  const l = (max+min)/2;
+  let s = 0, hue = 0;
+  if(max !== min){
+    const d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    if(max === r) hue = ((g-b)/d + (g < b ? 6 : 0));
+    else if(max === g) hue = (b-r)/d + 2;
+    else hue = (r-g)/d + 4;
+    hue *= 60;
+  }
+  return { h: hue, s: s*100, l: l*100 };
+}
+function applyBrandColor(hex){
+  if(!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+  brandColorCurrent = hex;
+  const root = document.documentElement.style;
+  root.setProperty('--primary', hex);
+  const hsl = hexToHsl(hex);
+  const dark = document.body.classList.contains('dark-theme');
+  const sat = Math.max(12, Math.min(hsl.s, 40));
+  const soft = dark
+    ? 'hsl(' + Math.round(hsl.h) + ', ' + Math.round(sat) + '%, 21%)'
+    : 'hsl(' + Math.round(hsl.h) + ', ' + Math.round(sat) + '%, 91%)';
+  root.setProperty('--primary-soft', soft);
+}
 function setTheme(theme){
   document.body.classList.toggle('dark-theme', theme === 'dark');
+  applyBrandColor(brandColorCurrent);
   localStorage.setItem('progres_theme', theme);
   document.getElementById('themeLightBtn').style.background = theme === 'light' ? 'var(--primary-soft)' : 'transparent';
   document.getElementById('themeLightBtn').style.color = theme === 'light' ? 'var(--primary)' : 'var(--muted)';
@@ -3354,7 +3388,7 @@ function loadBrandIcon(input){
 function updateBrandPreview(){
   const name = document.getElementById('brandName').value.trim() || 'Moj Coaching';
   document.getElementById('brandPreviewName').textContent = name;
-  const header = document.querySelector('#screenNastavitve > div:nth-child(2)');
+  const header = document.getElementById('brandPreviewBanner');
   if(header) header.style.background = brandColor;
   const initials = name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
   const prevIcon = document.getElementById('brandPreviewIcon');
@@ -3371,7 +3405,7 @@ async function saveBranding(){
       body: JSON.stringify({ brand_ime: name, brand_barva: brandColor, brand_ikona_url: brandIconData })
     });
     if(!res.ok) throw new Error('Napaka pri shranjevanju brandinga.');
-    document.documentElement.style.setProperty('--primary', brandColor);
+    applyBrandColor(brandColor);
     toast('Branding shranjen ✓ — stranke ga vidijo takoj.');
   }catch(err){ toast(err.message); }
   finally{ btn.disabled = false; btn.textContent = 'Shrani branding'; }
