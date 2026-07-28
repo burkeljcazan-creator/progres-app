@@ -8,19 +8,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#EEF4FA; --card:#FFFFFF; --ink:#091420; --muted:#6B8299;
-  --primary:#7CC4F2; --primary-soft:#DDEDF9; --primary-ink:#2B8FD6; --on-primary:#091420;
+  --bg:#EEF4FA; --card:#FFFFFF; --ink:#091420; --muted:#5F7B8A;
+  --primary:#7CC4F2; --primary-soft:#EAF4FC; --primary-ink:#2B8FD6; --on-primary:#091420;
   --accent:#F2A93B; --accent-soft:#FBEFD9;
-  --danger:#D64545; --danger-soft:#FBE7E7; --ok:#1FA971; --ok-soft:#DFF6EC;
+  --danger:#D64545; --danger-soft:#FBE7E7; --ok:#17805A; --ok-soft:#E4F7ED;
   --line:#D8E4EF; --r:14px;
-  --mint:#6FE3A8; --chart-track:#E3EBF3; --chart-under:#BFE0F7; --sidebar:#0F2438;
+  --mint:#6FE3A8; --mint-strong:#17805A; --chart-track:#E3EBF3; --chart-under:#BFE0F7; --sidebar:#123049;
 }
 body.dark-theme{
-  --bg:#091420; --card:#123049; --ink:#EAF2F8; --muted:#7E9AB2;
-  --primary-soft:#173B57; --primary-ink:#7CC4F2; --accent-soft:#3A2E15;
-  --danger-soft:#3A1F1F; --ok-soft:#123A2C;
+  --bg:#091420; --card:#123049; --ink:#EAF2F8; --muted:#8FAAC0;
+  --primary-soft:#12354F; --primary-ink:#7CC4F2; --accent-soft:#3A2E15;
+  --danger-soft:#3A1F1F; --ok:#6FE3A8; --ok-soft:#123D30;
   --line:#1E4568;
-  --chart-track:#17324B; --chart-under:#1E4568; --sidebar:#061019;
+  --mint-strong:#6FE3A8; --chart-track:#1E4568; --chart-under:#1E4568; --sidebar:#061019;
 }
 body.dark-theme .card, body.dark-theme .program-card, body.dark-theme .meal-card, body.dark-theme .attn-card,
 body.dark-theme .chat-box, body.dark-theme .ex-log-block, body.dark-theme .auth-card{ background:var(--card); }
@@ -43,7 +43,7 @@ body.dark-theme .tabs{ background:#1B2224; }
 .trainer-nav{display:none}
 .side-nav{display:none}
 @media (min-width:1024px){
-  .side-nav{display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:212px;background:var(--sidebar);padding:20px 12px 14px;z-index:12}
+  .side-nav{display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:236px;background:var(--sidebar);padding:20px 12px 14px;z-index:12}
   .sn-brand{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:#fff;padding:0 12px 18px}
   .sn-brand span{color:var(--primary)}
   .sn-items{display:flex;flex-direction:column;gap:2px}
@@ -57,15 +57,18 @@ body.dark-theme .tabs{ background:#1B2224; }
   .sn-sub{font-size:11px;color:rgba(255,255,255,.55)}
 
   #appScreen .navbar, #clientAppScreen .navbar{display:none}
-  #appScreen>.wrap, #clientAppScreen>.wrap{margin:0 0 0 212px;max-width:none;padding:28px 32px 60px}
+  #appScreen>.wrap{margin:0 0 0 236px;max-width:none;padding:28px 32px 60px}
+  #clientAppScreen>.side-nav{width:224px}
+  #clientAppScreen>.wrap{margin:0 0 0 224px;max-width:none;padding:28px 32px 60px}
   #appScreen .toplevel-tabs#topTabs{display:none}
   .bottom-nav{display:none}
   .has-bottom-nav{padding-bottom:28px}
   #clientScreenDanes .danes-split{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start}
 }
 @media (min-width:1024px){
-  #clientsWorkspace.split{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start}
-  #clientsWorkspace.split #screenClients{position:sticky;top:16px;max-height:calc(100vh - 90px);overflow-y:auto;padding-right:4px}
+  #clientsWorkspace.split{display:grid;grid-template-columns:336px 1fr;gap:0;align-items:start}
+  #clientsWorkspace.split #screenClients{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--card);border-right:1px solid var(--line);padding:20px 16px;margin:-28px 0 -60px -32px}
+  #clientsWorkspace.split #screenClientDetail{padding-left:28px}
   #clientsWorkspace.split #screenClients .kpis{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
   #clientsWorkspace.split #screenClients .kpi{padding:10px;text-align:left;display:flex;align-items:baseline;gap:8px}
   #clientsWorkspace.split #screenClients .kpi b{font-size:18px}
@@ -290,10 +293,11 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <button class="sn-item" id="snProgrami" onclick="showPrograms()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>Programi</button>
       <button class="sn-item" id="snObroki" onclick="showObroki()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M6 3v8a2 2 0 004 0V3M8 11v10M18 3c-1.5 2-2 4-2 6s.5 3 2 3v9"/></svg>Obroki</button>
       <button class="sn-item" id="snNarocnine" onclick="showNarocnine()"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Naročnine</button>
+      <button class="sn-item" id="snNastavitve" onclick="openSettingsMenu()"><svg viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Nastavitve</button>
     </nav>
-    <div class="sn-user" onclick="openSettingsMenu()">
+    <div class="sn-user">
       <div class="sn-ava" id="trainerSideInitials">?</div>
-      <div style="min-width:0"><div class="sn-name" id="trainerSideName"></div><div class="sn-sub">Nastavitve</div></div>
+      <div style="min-width:0"><div class="sn-name" id="trainerSideName"></div><div class="sn-sub">trener</div></div>
     </div>
   </aside>
   <div class="navbar">
@@ -1236,6 +1240,7 @@ function setTopTab(tab){
     const e = document.getElementById(id); if(e) e.classList.toggle('on', bn[tab] === id);
   });
   const sn = { clients:'snStranke', programs:'snProgrami', obroki:'snObroki', narocnine:'snNarocnine' };
+  const snN = document.getElementById('snNastavitve'); if(snN) snN.classList.remove('on');
   ['snStranke','snProgrami','snObroki','snNarocnine'].forEach(function(id){
     const e = document.getElementById(id); if(e) e.classList.toggle('on', sn[tab] === id);
   });
@@ -1264,6 +1269,10 @@ let privzBeljMaxGlobal = null;
 
 function openSettingsMenu(){
   hideAllScreens();
+  ['snStranke','snProgrami','snObroki','snNarocnine'].forEach(function(id){
+    const e = document.getElementById(id); if(e) e.classList.remove('on');
+  });
+  const snN = document.getElementById('snNastavitve'); if(snN) snN.classList.add('on');
   document.getElementById('screenNastavitve').classList.remove('hidden');
   document.getElementById('topTabs').classList.add('hidden');
   showSettingsSection('profil');
