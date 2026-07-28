@@ -361,6 +361,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <div class="group-label warn">Potrebuje pozornost</div>
       <div id="needsAttentionList" style="margin-bottom:24px"></div>
 
+      <input type="text" id="clientSearch" placeholder="Išči po imenu, cilju, alergijah…" oninput="filterClientList()" style="width:100%;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:4px;background:var(--card);color:var(--ink)">
       <div class="group-label">Vse stranke</div>
       <div class="sec-head" style="margin-top:0">
         <h2 style="font-size:14.5px">Seznam</h2>
@@ -391,9 +392,10 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           <h2 id="cdIme"></h2>
           <div class="meta" id="cdMeta"></div>
         </div>
-        <button class="chat-icon-btn" style="background:var(--primary);color:var(--on-primary);border-color:var(--primary-ink);width:44px;height:44px;flex-shrink:0" title="Odpri klepet" onclick="openClientChatScreen()">
-          <svg viewBox="0 0 24 24" width="20" height="20" style="stroke:var(--on-primary);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 12a8 8 0 01-8 8H4l2-3a8 8 0 1115-5z"/></svg>
-        </button>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-inline" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="toggleEditClient()">Uredi podatke</button>
+          <button class="btn btn-inline" onclick="openClientChatScreen()">Odpri klepet</button>
+        </div>
       </div>
       <div class="cd-cols">
         <div class="cd-main">
@@ -414,12 +416,13 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           <div class="field"><label>Opomba (neobvezno)</label><input type="text" id="mrOpomba" placeholder="npr. konec tedna težje"></div>
           <button class="btn" id="mrSaveBtn" onclick="saveMeritev()">Shrani meritev</button>
         </div>
-        <div class="card hidden" id="ringsCard"></div>
-        <div class="card" id="progressChartCard"></div>
-        <div class="card hidden" id="kcalChartCard"></div>
-        <div class="card hidden" id="stepsChartCard"></div>
-        <div class="card hidden" id="sleepChartCard"></div>
-        <div class="card hidden" id="heatCard"></div>
+        <div class="prog-cols">
+          <div class="card" id="progressChartCard"></div>
+          <div class="card hidden" id="kcalChartCard"></div>
+          <div class="card hidden" id="stepsChartCard"></div>
+          <div class="card hidden" id="sleepChartCard"></div>
+          <div class="card hidden" id="heatCard"></div>
+        </div>
         <div id="progressList" style="margin-bottom:20px"></div>
   
         <div class="sec-head">
@@ -445,6 +448,8 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <div class="card" id="clientAccessCard">
           <div id="caStatus"></div>
         </div>
+
+        <div class="card" id="bodyDataCard"></div>
   
         <div class="sec-head">
           <h2 style="font-size:14.5px">Telesni podatki (za izračun prehrane)</h2>
@@ -1828,6 +1833,7 @@ function openClientDetail(id){
   document.getElementById('meritevForm').classList.add('hidden');
   document.getElementById('nutritionTargetForm').classList.add('hidden');
   renderClientAccessStatus(c);
+  renderBodyData(c);
   loadMealOverrides(id).then(function(){ renderNutritionSection(c); });
   loadAssignedPrograms(id);
   loadTrainingLog(id);
@@ -3097,15 +3103,49 @@ function evaluateMealSuitability(meal, c){
   }
   return (kcalOk && proteinOk) ? 'primerno' : 'vmes';
 }
+function filterClientList(){
+  const q = (document.getElementById('clientSearch').value || '').toLowerCase().trim();
+  document.querySelectorAll('#clientList .client-row').forEach(function(r){
+    r.style.display = (!q || r.textContent.toLowerCase().indexOf(q) > -1) ? '' : 'none';
+  });
+}
+function renderBodyData(c){
+  const wrap = document.getElementById('bodyDataCard');
+  if(!wrap) return;
+  const aktMap = { nizka:'nizka', zmerna:'zmerna (3–4× tedensko)', srednja:'zmerna', visoka:'visoka' };
+  const pari = [
+    ['Cilj', c.cilj], ['Začetna teža', c.zacetna_teza ? c.zacetna_teza + ' kg' : null],
+    ['Trenutna teža', c.trenutna_teza ? c.trenutna_teza + ' kg' : null], ['Ciljna teža', c.ciljna_teza ? c.ciljna_teza + ' kg' : null],
+    ['Višina', c.visina ? c.visina + ' cm' : null], ['Aktivnost', c.aktivnost ? (aktMap[c.aktivnost] || c.aktivnost) : null],
+    ['Starost', c.starost ? c.starost + ' let' : null], ['Spol', spolLabel(c.spol) !== '—' ? spolLabel(c.spol) : null],
+    ['Paket', c.paket_id ? paketIme(c.paket_id) : null], ['Plačano do', c.placano_do]
+  ].filter(function(x){ return x[1]; });
+  const kv = pari.map(function(x){
+    return '<div><div style="font-size:10.5px;color:var(--muted);margin-bottom:3px">' + x[0] + '</div><div style="font-size:13.5px;font-weight:600">' + escapeHtml(String(x[1])) + '</div></div>';
+  }).join('');
+  const tagi = [];
+  (c.alergije || '').split(',').forEach(function(t){ if(t.trim()) tagi.push(t.trim()); });
+  (c.poskodbe || '').split(',').forEach(function(t){ if(t.trim()) tagi.push(t.trim()); });
+  (c.bolezni || '').split(',').forEach(function(t){ if(t.trim()) tagi.push(t.trim()); });
+  const tagiHtml = tagi.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">'
+    + tagi.map(function(t){ return '<span style="background:var(--danger-soft);color:var(--danger);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px">' + escapeHtml(t) + '</span>'; }).join('') + '</div>' : '';
+  wrap.innerHTML = '<div class="card-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">Telesni podatki</h3></div>'
+    + (pari.length ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' + kv + '</div>' : '<span style="font-size:12.5px;color:var(--muted)">Podatki še niso vneseni — klikni "Uredi podatke" zgoraj.</span>')
+    + tagiHtml;
+}
 function renderNutritionSection(c){
   const wrap = document.getElementById('nutritionTargets');
   const pr = proteinRange(c);
   if(!c.cilj_kcal && !pr){
     wrap.innerHTML = '<span style="font-size:13px;color:var(--muted)">Cilji še niso nastavljeni — klikni "Nastavi cilje" zgoraj.</span>';
   } else {
-    wrap.innerHTML = '<div class="kpis" style="margin-bottom:0">'
-      + (c.cilj_kcal ? '<div class="kpi"><b>' + c.cilj_kcal + '</b><span>kcal / dan</span></div>' : '')
-      + (pr ? '<div class="kpi"><b>' + pr.min + '–' + pr.max + ' g</b><span>beljakovin / dan (pri ' + c.trenutna_teza + ' kg)</span></div>' : (c.beljakovine_min_gkg ? '<div class="kpi"><b>—</b><span>vnesi težo stranke za izračun g beljakovin</span></div>' : ''))
+    const cilji = [];
+    if(c.cilj_kcal) cilji.push(['<b>' + c.cilj_kcal + '</b>', 'kcal / dan']);
+    if(pr) cilji.push(['<b>' + pr.min + '–' + pr.max + ' g</b>', 'beljakovin / dan']);
+    if(c.cilj_koraki) cilji.push(['<b>' + c.cilj_koraki + '</b>', 'korakov']);
+    if(c.cilj_spanje_ure) cilji.push(['<b>' + c.cilj_spanje_ure + ' h</b>', 'spanja']);
+    wrap.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+      + cilji.map(function(x){ return '<div><div style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:19px">' + x[0].replace(/<\/?b>/g,'') + '</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + x[1] + '</div></div>'; }).join('')
       + '</div>';
   }
   renderMealSuitability(c);
@@ -4114,13 +4154,6 @@ function renderProgress(meritve){
   // obroči za danes + koledar doslednosti
   const danesIso = new Date().toISOString().slice(0,10);
   const danesM = meritve.filter(function(m){ return m.datum === danesIso; })[0] || {};
-  const ringItems = [];
-  if(c.cilj_kcal) ringItems.push({ label:'Kalorije', val: danesM.kcal_zauzito || 0, target: c.cilj_kcal, sub:'/ ' + c.cilj_kcal + ' kcal' });
-  if(c.cilj_koraki) ringItems.push({ label:'Koraki', val: danesM.koraki || 0, target: c.cilj_koraki, sub:'/ ' + c.cilj_koraki });
-  if(c.cilj_spanje_ure) ringItems.push({ label:'Spanje', val: danesM.spanje_ure || 0, target: c.cilj_spanje_ure, sub:'/ ' + c.cilj_spanje_ure + ' h' });
-  const ringsWrap = document.getElementById('ringsCard');
-  if(ringItems.length > 0){ ringsWrap.classList.remove('hidden'); ringsWrap.innerHTML = buildRings(ringItems); }
-  else { ringsWrap.classList.add('hidden'); }
   const heatWrap = document.getElementById('heatCard');
   if(meritve.length > 0){ heatWrap.classList.remove('hidden'); heatWrap.innerHTML = buildHeatCalendar(meritve); }
   else { heatWrap.classList.add('hidden'); }
