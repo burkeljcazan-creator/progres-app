@@ -546,6 +546,53 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
   </div>
 </div>
 
+<div id="clientOnboardingScreen" class="hidden">
+  <div class="navbar">
+    <div class="brand">Progres<span>.</span></div>
+  </div>
+  <div class="wrap" style="max-width:520px">
+    <div class="client-header">
+      <h2>Dobrodošel/a! 👋</h2>
+      <div class="meta">Preden začneš, potrebujemo nekaj osnovnih podatkov o tebi</div>
+    </div>
+    <div class="card">
+      <div class="field"><label>Kaj je tvoj glavni cilj?</label><input type="text" id="obCilj" placeholder="npr. izguba maščobe, moč, vzdržljivost"></div>
+      <div class="grid2">
+        <div class="field"><label>Trenutna teža (kg)</label><input type="number" step="0.1" id="obTeza"></div>
+        <div class="field"><label>Ciljna teža (kg)</label><input type="number" step="0.1" id="obCiljTeza"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Starost</label><input type="number" id="obStarost"></div>
+        <div class="field"><label>Višina (cm)</label><input type="number" id="obVisina"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Spol</label>
+          <select id="obSpol" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:'Inter',sans-serif">
+            <option value="">Izberi…</option>
+            <option value="moski">Moški</option>
+            <option value="zenska">Ženska</option>
+            <option value="drugo">Drugo</option>
+          </select>
+        </div>
+        <div class="field"><label>Raven aktivnosti</label>
+          <select id="obAktivnost" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:'Inter',sans-serif">
+            <option value="">Izberi…</option>
+            <option value="nizka">Nizka (sedeče delo)</option>
+            <option value="srednja">Srednja (nekaj gibanja)</option>
+            <option value="visoka">Visoka (fizično delo/šport)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Alergije ali intolerance (neobvezno)</label><input type="text" id="obAlergije" placeholder="npr. laktoza, oreščki — pusti prazno, če jih ni"></div>
+      <div class="grid2">
+        <div class="field"><label>Koliko obrokov na dan želiš?</label><input type="number" id="obObroki" placeholder="npr. 4"></div>
+        <div class="field"><label>Tekočine — cilj (l/dan)</label><input type="number" step="0.1" id="obTekocine" placeholder="npr. 2.5"></div>
+      </div>
+      <button class="btn" id="obSaveBtn" onclick="saveOnboarding()">Shrani in nadaljuj</button>
+    </div>
+  </div>
+</div>
+
 <div id="clientAppScreen" class="hidden">
   <div class="navbar">
     <div class="brand">Progres<span>.</span></div>
@@ -760,6 +807,45 @@ function handleLogout(){
 }
 
 // ---------- APP ENTRY ----------
+function showOnboardingQuestionnaire(){
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('clientOnboardingScreen').classList.remove('hidden');
+  const c = clientProfile;
+  if(c.cilj) document.getElementById('obCilj').value = c.cilj;
+  if(c.trenutna_teza) document.getElementById('obTeza').value = c.trenutna_teza;
+  if(c.ciljna_teza) document.getElementById('obCiljTeza').value = c.ciljna_teza;
+  if(c.starost) document.getElementById('obStarost').value = c.starost;
+  if(c.visina) document.getElementById('obVisina').value = c.visina;
+  if(c.spol) document.getElementById('obSpol').value = c.spol;
+  if(c.aktivnost) document.getElementById('obAktivnost').value = c.aktivnost;
+  if(c.alergije) document.getElementById('obAlergije').value = c.alergije;
+}
+async function saveOnboarding(){
+  const btn = document.getElementById('obSaveBtn');
+  btn.disabled = true; btn.textContent = 'Shranjujem...';
+  try{
+    const payload = {
+      cilj: document.getElementById('obCilj').value.trim() || null,
+      trenutna_teza: document.getElementById('obTeza').value ? parseFloat(document.getElementById('obTeza').value) : null,
+      ciljna_teza: document.getElementById('obCiljTeza').value ? parseFloat(document.getElementById('obCiljTeza').value) : null,
+      starost: document.getElementById('obStarost').value ? parseInt(document.getElementById('obStarost').value) : null,
+      visina: document.getElementById('obVisina').value ? parseInt(document.getElementById('obVisina').value) : null,
+      spol: document.getElementById('obSpol').value || null,
+      aktivnost: document.getElementById('obAktivnost').value || null,
+      alergije: document.getElementById('obAlergije').value.trim() || null,
+      stevilo_obrokov: document.getElementById('obObroki').value ? parseInt(document.getElementById('obObroki').value) : null,
+      tekocine_l: document.getElementById('obTekocine').value ? parseFloat(document.getElementById('obTekocine').value) : null,
+      vprasalnik_izpolnjen: true
+    };
+    const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + clientProfile.id, {
+      method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju. Preveri, ali so vsa polja pravilno izpolnjena.');
+    clientProfile = (await res.json())[0];
+    document.getElementById('clientOnboardingScreen').classList.add('hidden');
+    await enterApp();
+  }catch(err){ toast(err.message); btn.disabled = false; btn.textContent = 'Shrani in nadaljuj'; }
+}
 async function enterApp(){
   startSessionRefreshTimer();
   document.getElementById('authScreen').classList.add('hidden');
@@ -769,6 +855,10 @@ async function enterApp(){
     const rows = res.ok ? await res.json() : [];
     if(rows.length > 0){
       clientProfile = rows[0];
+      if(!clientProfile.vprasalnik_izpolnjen){
+        showOnboardingQuestionnaire();
+        return;
+      }
       document.getElementById('clientAppScreen').classList.remove('hidden');
       document.getElementById('clientWhoName').textContent = clientProfile.ime;
       const bits = [];
