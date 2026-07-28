@@ -13,14 +13,14 @@
   --accent:#F2A93B; --accent-soft:#FBEFD9;
   --danger:#D64545; --danger-soft:#FBE7E7; --ok:#1FA971; --ok-soft:#DFF6EC;
   --line:#D8E4EF; --r:14px;
-  --mint:#6FE3A8; --chart-track:#E3EBF3; --chart-under:#BFE0F7;
+  --mint:#6FE3A8; --chart-track:#E3EBF3; --chart-under:#BFE0F7; --sidebar:#0F2438;
 }
 body.dark-theme{
   --bg:#091420; --card:#123049; --ink:#EAF2F8; --muted:#7E9AB2;
   --primary-soft:#173B57; --primary-ink:#7CC4F2; --accent-soft:#3A2E15;
   --danger-soft:#3A1F1F; --ok-soft:#123A2C;
   --line:#1E4568;
-  --chart-track:#17324B; --chart-under:#1E4568;
+  --chart-track:#17324B; --chart-under:#1E4568; --sidebar:#061019;
 }
 body.dark-theme .card, body.dark-theme .program-card, body.dark-theme .meal-card, body.dark-theme .attn-card,
 body.dark-theme .chat-box, body.dark-theme .ex-log-block, body.dark-theme .auth-card{ background:var(--card); }
@@ -41,6 +41,28 @@ body.dark-theme .tabs{ background:#1B2224; }
 .bn-item.on{color:var(--primary-ink)}
 .has-bottom-nav{padding-bottom:86px}
 .trainer-nav{display:none}
+.side-nav{display:none}
+@media (min-width:1024px){
+  .side-nav{display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:212px;background:var(--sidebar);padding:20px 12px 14px;z-index:12}
+  .sn-brand{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;color:#fff;padding:0 12px 18px}
+  .sn-brand span{color:var(--primary)}
+  .sn-items{display:flex;flex-direction:column;gap:2px}
+  .sn-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border:0;border-radius:10px;background:transparent;color:rgba(255,255,255,.66);font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;cursor:pointer;text-align:left}
+  .sn-item svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .sn-item:hover{color:#fff;background:rgba(255,255,255,.07)}
+  .sn-item.on{color:#fff;background:rgba(255,255,255,.14)}
+  .sn-user{margin-top:auto;display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:1px solid rgba(255,255,255,.14);cursor:pointer}
+  .sn-ava{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;flex-shrink:0}
+  .sn-name{font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sn-sub{font-size:11px;color:rgba(255,255,255,.55)}
+
+  #appScreen .navbar, #clientAppScreen .navbar{display:none}
+  #appScreen>.wrap, #clientAppScreen>.wrap{margin:0 0 0 212px;max-width:none;padding:28px 32px 60px}
+  #appScreen .toplevel-tabs#topTabs{display:none}
+  .bottom-nav{display:none}
+  .has-bottom-nav{padding-bottom:28px}
+  #clientScreenDanes .danes-split{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start}
+}
 @media (min-width:1024px){
   #clientsWorkspace.split{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start}
   #clientsWorkspace.split #screenClients{position:sticky;top:16px;max-height:calc(100vh - 90px);overflow-y:auto;padding-right:4px}
@@ -261,6 +283,19 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
 <!-- ===================== APP ===================== -->
 <div id="appScreen" class="hidden">
+  <aside class="side-nav" id="trainerSideNav">
+    <div class="sn-brand">Progres<span>.</span></div>
+    <nav class="sn-items">
+      <button class="sn-item on" id="snStranke" onclick="showClients()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Stranke</button>
+      <button class="sn-item" id="snProgrami" onclick="showPrograms()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>Programi</button>
+      <button class="sn-item" id="snObroki" onclick="showObroki()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M6 3v8a2 2 0 004 0V3M8 11v10M18 3c-1.5 2-2 4-2 6s.5 3 2 3v9"/></svg>Obroki</button>
+      <button class="sn-item" id="snNarocnine" onclick="showNarocnine()"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Naročnine</button>
+    </nav>
+    <div class="sn-user" onclick="openSettingsMenu()">
+      <div class="sn-ava" id="trainerSideInitials">?</div>
+      <div style="min-width:0"><div class="sn-name" id="trainerSideName"></div><div class="sn-sub">Nastavitve</div></div>
+    </div>
+  </aside>
   <div class="navbar">
     <div style="display:flex;align-items:center;gap:12px">
       <button class="gear-btn" onclick="openSettingsMenu()" title="Nastavitve" aria-label="Nastavitve">
@@ -818,6 +853,21 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 </div>
 
 <div id="clientAppScreen" class="hidden">
+  <aside class="side-nav" id="clientSideNav">
+    <div class="sn-brand" id="clientSideBrand">Progres<span>.</span></div>
+    <nav class="sn-items">
+      <button class="sn-item on" id="snDanes" onclick="showClientDanes()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Danes</button>
+      <button class="sn-item" id="snTrening" onclick="showClientPrograms()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>Programi</button>
+      <button class="sn-item" id="snPrehrana" onclick="showClientNutrition()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M6 3v8a2 2 0 004 0V3M8 11v10M18 3c-1.5 2-2 4-2 6s.5 3 2 3v9"/></svg>Prehrana</button>
+      <button class="sn-item" id="snNapredek" onclick="showClientProgress()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Napredek</button>
+      <button class="sn-item" id="snKlepet" onclick="showClientChat()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M21 12a8 8 0 01-8 8H4l2-3a8 8 0 1115-5z"/></svg>Klepet</button>
+      <button class="sn-item" id="snGradiva" onclick="showClientGradiva()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Gradiva</button>
+    </nav>
+    <div class="sn-user" onclick="showClientNarocnina()">
+      <div class="sn-ava" id="clientSideInitials">?</div>
+      <div style="min-width:0"><div class="sn-name" id="clientSideName"></div><div class="sn-sub">Naročnina</div></div>
+    </div>
+  </aside>
   <div class="navbar">
     <div class="brand">Progres<span>.</span></div>
     <div class="who" style="position:relative">
@@ -1132,11 +1182,14 @@ async function enterApp(){
         const t = tRows[0];
         if(t){
           if(t.brand_ime) document.querySelector('#clientAppScreen .brand').innerHTML = escapeHtml(t.brand_ime) + '<span>.</span>';
+          if(t.brand_ime) document.getElementById('clientSideBrand').innerHTML = escapeHtml(t.brand_ime) + '<span>.</span>';
           if(t.brand_barva) applyBrandColor(t.brand_barva);
         }
       }catch(e){}
       const zac = (clientProfile.ime || '?').split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
       document.getElementById('clientAvatarInitials').textContent = zac;
+      document.getElementById('clientSideInitials').textContent = zac;
+      document.getElementById('clientSideName').textContent = clientProfile.ime;
       await loadClientOwnPrograms();
       showClientDanes();
       return;
@@ -1146,6 +1199,9 @@ async function enterApp(){
   document.getElementById('appScreen').classList.remove('hidden');
   const ime = (session.user && session.user.user_metadata && session.user.user_metadata.ime) || session.user.email || 'Trener';
   document.getElementById('whoName').textContent = ime;
+  const tz = ime.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+  document.getElementById('trainerSideInitials').textContent = tz;
+  document.getElementById('trainerSideName').textContent = ime;
   try{
     const bRes = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=brand_barva,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg', { headers: authHeaders() });
     const bRows = bRes.ok ? await bRes.json() : [];
@@ -1178,6 +1234,10 @@ function setTopTab(tab){
   const bn = { clients:'bnStranke', programs:'bnProgrami', obroki:'bnObroki', narocnine:'bnNarocnine' };
   ['bnStranke','bnProgrami','bnObroki','bnNarocnine'].forEach(function(id){
     const e = document.getElementById(id); if(e) e.classList.toggle('on', bn[tab] === id);
+  });
+  const sn = { clients:'snStranke', programs:'snProgrami', obroki:'snObroki', narocnine:'snNarocnine' };
+  ['snStranke','snProgrami','snObroki','snNarocnine'].forEach(function(id){
+    const e = document.getElementById(id); if(e) e.classList.toggle('on', sn[tab] === id);
   });
   document.getElementById('tabClientsTop').classList.toggle('on', tab==='clients');
   document.getElementById('tabProgramsTop').classList.toggle('on', tab==='programs');
@@ -2212,6 +2272,10 @@ function hideAllClientScreens(){
 function setBottomTab(id){
   const e = document.getElementById(id);
   if(e) e.classList.add('on');
+  const par = { bnDanes:'snDanes', bnTrening:'snTrening', bnPrehrana:'snPrehrana', bnNapredek:'snNapredek', bnKlepet:'snKlepet' };
+  ['snDanes','snTrening','snPrehrana','snNapredek','snKlepet','snGradiva'].forEach(function(x){
+    const el = document.getElementById(x); if(el) el.classList.toggle('on', par[id] === x);
+  });
 }
 function toggleClientProfileMenu(ev){
   if(ev) ev.stopPropagation();
@@ -2241,9 +2305,12 @@ async function renderDanes(){
   const ime = (clientProfile.ime || '').split(' ')[0];
   wrap.innerHTML = '<div class="client-header"><h2>Živjo, ' + escapeHtml(ime) + '</h2>'
     + (clientProfile.cilj ? '<div class="meta">Cilj: ' + escapeHtml(clientProfile.cilj) + '</div>' : '') + '</div>'
-    + '<div id="danesTrening"></div><div id="danesStats"></div><div id="danesTeza"></div>'
-    + '<button class="dashed-btn" onclick="showClientProgress()">+ Vpiši današnjo meritev</button>'
-    + '<div id="danesKlepet"></div>';
+    + '<div class="danes-split">'
+    +   '<div><div id="danesStats"></div><div id="danesTrening"></div></div>'
+    +   '<div><div id="danesTeza"></div>'
+    +     '<button class="dashed-btn" onclick="showClientProgress()">+ Vpiši današnjo meritev</button>'
+    +     '<div id="danesKlepet"></div></div>'
+    + '</div>';
 
   const danesIso = new Date().toISOString().slice(0,10);
   try{
@@ -2336,6 +2403,7 @@ async function showClientGradiva(){
   stopClientChatPolling();
   hideAllClientScreens();
   document.getElementById('clientScreenGradiva').classList.remove('hidden');
+  const snG = document.getElementById('snGradiva'); if(snG) snG.classList.add('on');
   const wrap = document.getElementById('clientGradivaList');
   wrap.innerHTML = '<div class="empty">Nalagam…</div>';
   try{
