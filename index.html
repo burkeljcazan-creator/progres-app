@@ -40,6 +40,12 @@ body.dark-theme .tabs{ background:#1B2224; }
 .bn-item svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .bn-item.on{color:var(--primary-ink)}
 .has-bottom-nav{padding-bottom:86px}
+.trainer-nav{display:none}
+@media (max-width:640px){
+  #appScreen .toplevel-tabs#topTabs{display:none}
+  .trainer-nav{display:flex}
+  #appScreen .wrap{padding-bottom:86px}
+}
 .stat-tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 12px}
 .stat-tile .lbl{font-size:10.5px;color:var(--muted);margin-bottom:5px}
 .stat-tile .val{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;line-height:1;color:var(--ink)}
@@ -553,6 +559,25 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
       <div id="mealList"></div>
     </div>
+
+    <nav class="bottom-nav trainer-nav" id="trainerBottomNav">
+      <button class="bn-item on" id="bnStranke" onclick="showClients()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+        <span>Stranke</span>
+      </button>
+      <button class="bn-item" id="bnProgrami" onclick="showPrograms()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>
+        <span>Programi</span>
+      </button>
+      <button class="bn-item" id="bnObroki" onclick="showObroki()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M6 3v8a2 2 0 004 0V3M8 11v10M18 3c-1.5 2-2 4-2 6s.5 3 2 3v9"/></svg>
+        <span>Obroki</span>
+      </button>
+      <button class="bn-item" id="bnNarocnine" onclick="showNarocnine()">
+        <svg viewBox="0 0 24 24" width="19" height="19"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        <span>Naročnine</span>
+      </button>
+    </nav>
 
     <!-- ===== EKRAN: NASTAVITVE (meni s podzavihki) ===== -->
     <div id="screenNastavitve" class="hidden">
@@ -1136,6 +1161,10 @@ function hideAllScreens(){
   });
 }
 function setTopTab(tab){
+  const bn = { clients:'bnStranke', programs:'bnProgrami', obroki:'bnObroki', narocnine:'bnNarocnine' };
+  ['bnStranke','bnProgrami','bnObroki','bnNarocnine'].forEach(function(id){
+    const e = document.getElementById(id); if(e) e.classList.toggle('on', bn[tab] === id);
+  });
   document.getElementById('tabClientsTop').classList.toggle('on', tab==='clients');
   document.getElementById('tabProgramsTop').classList.toggle('on', tab==='programs');
   document.getElementById('tabObrokiTop').classList.toggle('on', tab==='obroki');
