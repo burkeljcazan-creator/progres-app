@@ -41,6 +41,16 @@ body.dark-theme .tabs{ background:#1B2224; }
 .bn-item.on{color:var(--primary-ink)}
 .has-bottom-nav{padding-bottom:86px}
 .trainer-nav{display:none}
+@media (min-width:1024px){
+  #clientsWorkspace.split{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start}
+  #clientsWorkspace.split #screenClients{position:sticky;top:16px;max-height:calc(100vh - 90px);overflow-y:auto;padding-right:4px}
+  #clientsWorkspace.split #screenClients .kpis{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+  #clientsWorkspace.split #screenClients .kpi{padding:10px;text-align:left;display:flex;align-items:baseline;gap:8px}
+  #clientsWorkspace.split #screenClients .kpi b{font-size:18px}
+  #clientsWorkspace.split #screenClients .client-row{padding:10px 12px}
+  #clientsWorkspace.split #screenClientDetail .back-btn{display:none}
+  #screenClients .client-row.selected{background:var(--primary-soft);border-color:var(--primary-ink)}
+}
 @media (max-width:640px){
   #appScreen .toplevel-tabs#topTabs{display:none}
   .trainer-nav{display:flex}
@@ -273,6 +283,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
     </div>
 
     <!-- ===== EKRAN: SEZNAM STRANK (vključno z analitiko) ===== -->
+    <div id="clientsWorkspace">
     <div id="screenClients">
       <div class="kpis" id="clientsKpis">
         <div class="kpi"><b id="kpiClients">0</b><span>aktivnih strank</span></div>
@@ -429,6 +440,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
       <div class="sec-head"><h2 style="font-size:14.5px">Opravljeni treningi</h2></div>
       <div id="trainingLogList" style="margin-bottom:20px"></div>
+    </div>
     </div>
 
     <!-- ===== EKRAN: KLEPET S STRANKO (ločeno okno) ===== -->
@@ -1156,6 +1168,8 @@ async function enterApp(){
 // ---------- NAVIGACIJA ----------
 function hideAllScreens(){
   stopChatPolling();
+  const ws = document.getElementById('clientsWorkspace');
+  if(ws) ws.classList.remove('split');
   ['screenClients','screenClientDetail','screenPrograms','screenProgramBuilder','screenObroki','screenNastavitve','screenProgramPreview','screenClientChat','screenNarocnine'].forEach(function(id){
     document.getElementById(id).classList.add('hidden');
   });
@@ -1616,6 +1630,10 @@ async function renderClients(){
       + '</div>';
   }).join('');
 
+  if(currentClientId){
+    const sel = document.getElementById('crow_' + currentClientId);
+    if(sel) sel.classList.add('selected');
+  }
   const ids = clients.map(function(c){ return c.id; }).join(',');
   if(!ids) return;
   try{
@@ -1681,7 +1699,18 @@ function openClientDetail(id){
   document.getElementById('cdMeta').textContent = bits.join(' · ') || 'Ni dodatnih podatkov';
   hideAllScreens();
   document.getElementById('screenClientDetail').classList.remove('hidden');
-  document.getElementById('topTabs').classList.add('hidden');
+  const siroko = window.matchMedia('(min-width:1024px)').matches;
+  if(siroko){
+    document.getElementById('screenClients').classList.remove('hidden');
+    document.getElementById('clientsWorkspace').classList.add('split');
+    document.getElementById('topTabs').classList.remove('hidden');
+    setTopTab('clients');
+  } else {
+    document.getElementById('topTabs').classList.add('hidden');
+  }
+  document.querySelectorAll('#clientList .client-row').forEach(function(r){ r.classList.remove('selected'); });
+  const sel = document.getElementById('crow_' + id);
+  if(sel) sel.classList.add('selected');
   document.getElementById('assignPicker').classList.add('hidden');
   document.getElementById('editClientForm').classList.add('hidden');
   document.getElementById('meritevForm').classList.add('hidden');
