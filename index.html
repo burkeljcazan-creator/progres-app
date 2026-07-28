@@ -26,6 +26,15 @@ body.dark-theme .tabs{ background:#1B2224; }
 .gear-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .gear-btn:hover{color:var(--primary);border-color:var(--primary)}
 .settings-section{max-width:520px}
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
+.data-table th{background:var(--primary-soft);color:var(--primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;text-align:left;padding:10px 12px;position:sticky;top:0}
+.data-table td{padding:10px 12px;border-top:1px solid var(--line);color:var(--ink)}
+.data-table tbody tr{cursor:pointer}
+.data-table tbody tr:hover{background:var(--primary-soft)}
+.data-table .num{text-align:right}
+.data-table .warn{color:var(--danger);font-weight:600}
+.data-table .dim{color:var(--muted)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--ink);min-height:100vh}
 h1,h2,h3{font-family:'Archivo',sans-serif}
@@ -291,13 +300,14 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           </div>
         </div>
         <div class="grid2">
+          <div class="field"><label>Začetna teža (kg)</label><input type="number" step="0.1" id="ecZacetnaTeza"></div>
           <div class="field"><label>Trenutna teža (kg)</label><input type="number" step="0.1" id="ecTeza"></div>
-          <div class="field"><label>Ciljna teža (kg)</label><input type="number" step="0.1" id="ecCiljTeza"></div>
         </div>
         <div class="grid2">
+          <div class="field"><label>Ciljna teža (kg)</label><input type="number" step="0.1" id="ecCiljTeza"></div>
           <div class="field"><label>Starost</label><input type="number" id="ecStarost"></div>
-          <div class="field"><label>Višina (cm)</label><input type="number" id="ecVisina"></div>
         </div>
+        <div class="field"><label>Višina (cm)</label><input type="number" id="ecVisina"></div>
         <div class="field"><label>Raven aktivnosti</label>
           <select id="ecAktivnost" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px">
             <option value="">— izberi —</option>
@@ -307,6 +317,20 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           </select>
         </div>
         <div class="field"><label>Alergije (ločene z vejico)</label><input type="text" id="ecAlergije" placeholder="npr. gluten, laktoza"></div>
+        <div class="field"><label>Poškodbe / omejitve pri gibanju</label><input type="text" id="ecPoskodbe" placeholder="npr. bolečina v ramenu, operirano koleno"></div>
+        <div class="field"><label>Zdravstvena stanja, pomembna za trening</label><input type="text" id="ecBolezni" placeholder="npr. sladkorna bolezen, astma, visok krvni tlak"></div>
+        <div class="field"><label>Druge opombe</label><input type="text" id="ecOpombe" placeholder="karkoli, kar je vredno vedeti"></div>
+        <div class="grid2">
+          <div class="field"><label>Paket</label>
+            <select id="ecPaket" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px">
+              <option value="">— brez paketa —</option>
+            </select>
+          </div>
+          <div class="field"><label>Plačano do (datum)</label><input type="date" id="ecPlacanoDo"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
+          <input type="checkbox" id="ecPlacano" style="width:19px;height:19px;accent-color:var(--primary)"> Naročnina je plačana
+        </label>
         <button class="btn" id="ecSaveBtn" onclick="saveClientEdits()">Shrani spremembe</button>
       </div>
 
@@ -575,10 +599,17 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         </div>
       </div>
 
-      <!-- STRANKE (privzete vrednosti) -->
-      <div id="settingsSectionStranke" class="settings-section hidden">
-        <div class="sec-head"><h2 style="font-size:14.5px">Privzete vrednosti za nove stranke</h2></div>
-        <div class="card">
+      <!-- STRANKE (baza podatkov + privzete vrednosti) -->
+      <div id="settingsSectionStranke" class="settings-section hidden" style="max-width:none">
+        <div class="sec-head">
+          <h2 style="font-size:14.5px">Baza strank</h2>
+          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="exportClientsCsv()">⤓ Izvozi CSV</button>
+        </div>
+        <input type="text" id="clientTableSearch" placeholder="Išči po imenu, cilju, alergijah, poškodbah…" oninput="renderClientsTable()" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:12px">
+        <div class="table-scroll"><table class="data-table" id="clientsTable"></table></div>
+
+        <div class="sec-head" style="margin-top:28px"><h2 style="font-size:14.5px">Privzete vrednosti za nove stranke</h2></div>
+        <div class="card" style="max-width:520px">
           <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Te vrednosti se samodejno predizpolnijo, ko pri novi stranki prvič odpreš "Nastavi cilje" — še vedno jih lahko za vsako stranko posebej spremeniš.</p>
           <div class="grid2">
             <div class="field"><label>Privzete beljakovine — min (g/kg)</label><input type="number" step="0.1" id="privzBeljMin" placeholder="npr. 1.8"></div>
@@ -984,6 +1015,7 @@ async function enterApp(){
   await loadVaje();
   await loadMape();
   await loadMealLibrary();
+  await loadPaketi();
   showClients();
 }
 
@@ -1031,6 +1063,9 @@ function showSettingsSection(name){
     document.getElementById('settingsSection' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('hidden', s !== name);
     document.getElementById('stab' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('on', s === name);
   });
+  if(name === 'stranke'){
+    if(paketi.length === 0){ loadPaketi().then(renderClientsTable); } else { renderClientsTable(); }
+  }
 }
 async function loadSettingsData(){
   document.getElementById('profEmailVal').value = (session.user && session.user.email) || '';
@@ -1110,6 +1145,93 @@ async function saveGeneralSettings(){
     privzBeljMaxGlobal = payload.privzeto_beljakovine_max_gkg;
     toast('Nastavitve shranjene ✓');
   }catch(err){ toast(err.message); }
+}
+function paketIme(id){
+  const p = paketi.find(function(x){ return x.id === id; });
+  return p ? p.ime : '—';
+}
+function aktivnostLabel(a){
+  if(a === 'nizka') return 'Nizka';
+  if(a === 'zmerna' || a === 'srednja') return 'Zmerna';
+  if(a === 'visoka') return 'Visoka';
+  return '—';
+}
+function spolLabel(s){
+  if(s === 'M' || s === 'moski') return 'M';
+  if(s === 'Z' || s === 'zenska') return 'Ž';
+  if(s === 'drugo') return 'Drugo';
+  return '—';
+}
+function clientTableRows(){
+  const q = (document.getElementById('clientTableSearch').value || '').toLowerCase().trim();
+  if(!q) return clients;
+  return clients.filter(function(c){
+    return [c.ime, c.cilj, c.alergije, c.poskodbe, c.bolezni, c.opombe, paketIme(c.paket_id)]
+      .filter(Boolean).join(' ').toLowerCase().indexOf(q) > -1;
+  });
+}
+function renderClientsTable(){
+  const table = document.getElementById('clientsTable');
+  const rows = clientTableRows();
+  const head = '<thead><tr>'
+    + ['Ime','Paket','Plačilo','Zač. teža','Trenutna','Cilj (kg)','Sprem.','Starost','Spol','Aktivnost','Alergije','Poškodbe','Zdravstveno','Opombe']
+      .map(function(h){ return '<th>' + h + '</th>'; }).join('')
+    + '</tr></thead>';
+  if(rows.length === 0){
+    table.innerHTML = head + '<tbody><tr><td colspan="14" class="dim" style="padding:18px;text-align:center">Ni zadetkov.</td></tr></tbody>';
+    return;
+  }
+  const body = '<tbody>' + rows.map(function(c){
+    const sprem = (c.zacetna_teza && c.trenutna_teza) ? (Math.round((c.trenutna_teza - c.zacetna_teza)*10)/10) : null;
+    const spremTxt = sprem === null ? '—' : ((sprem > 0 ? '+' : '') + sprem + ' kg');
+    const placilo = c.placano
+      ? '<span class="badge-ok">Plačano</span>' + (c.placano_do ? '<div class="dim" style="font-size:10.5px;margin-top:2px">do ' + c.placano_do + '</div>' : '')
+      : '<span class="badge-bad">Ni plačano</span>';
+    return '<tr onclick="openClientFromTable(\'' + c.id + '\')">'
+      + '<td><b>' + escapeHtml(c.ime) + '</b></td>'
+      + '<td>' + escapeHtml(paketIme(c.paket_id)) + '</td>'
+      + '<td>' + placilo + '</td>'
+      + '<td class="num">' + (c.zacetna_teza || '—') + '</td>'
+      + '<td class="num">' + (c.trenutna_teza || '—') + '</td>'
+      + '<td class="num">' + (c.ciljna_teza || '—') + '</td>'
+      + '<td class="num">' + spremTxt + '</td>'
+      + '<td class="num">' + (c.starost || '—') + '</td>'
+      + '<td>' + spolLabel(c.spol) + '</td>'
+      + '<td>' + aktivnostLabel(c.aktivnost) + '</td>'
+      + '<td' + (c.alergije ? ' class="warn"' : ' class="dim"') + '>' + escapeHtml(c.alergije || '—') + '</td>'
+      + '<td' + (c.poskodbe ? ' class="warn"' : ' class="dim"') + '>' + escapeHtml(c.poskodbe || '—') + '</td>'
+      + '<td' + (c.bolezni ? ' class="warn"' : ' class="dim"') + '>' + escapeHtml(c.bolezni || '—') + '</td>'
+      + '<td class="dim">' + escapeHtml(c.opombe || '—') + '</td>'
+      + '</tr>';
+  }).join('') + '</tbody>';
+  table.innerHTML = head + body;
+}
+function openClientFromTable(id){
+  openClientDetail(id);
+}
+function exportClientsCsv(){
+  const cols = ['Ime','Email','Paket','Placano','Placano do','Zacetna teza','Trenutna teza','Ciljna teza','Starost','Spol','Visina','Aktivnost','Alergije','Poskodbe','Zdravstveno','Opombe','Cilj'];
+  const esc = function(v){
+    if(v === null || v === undefined) return '';
+    const s = String(v);
+    return (s.indexOf(';') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const lines = [cols.join(';')];
+  clientTableRows().forEach(function(c){
+    lines.push([
+      c.ime, c.email, paketIme(c.paket_id), c.placano ? 'DA' : 'NE', c.placano_do,
+      c.zacetna_teza, c.trenutna_teza, c.ciljna_teza, c.starost, spolLabel(c.spol), c.visina,
+      aktivnostLabel(c.aktivnost), c.alergije, c.poskodbe, c.bolezni, c.opombe, c.cilj
+    ].map(esc).join(';'));
+  });
+  const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'progres-stranke-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV izvožen ✓');
 }
 function showClients(){
   hideAllScreens();
@@ -2148,12 +2270,22 @@ function toggleEditClient(){
   if(!c) return;
   document.getElementById('ecCilj').value = c.cilj || '';
   document.getElementById('ecSpol').value = c.spol || '';
+  document.getElementById('ecZacetnaTeza').value = c.zacetna_teza || '';
   document.getElementById('ecTeza').value = c.trenutna_teza || '';
   document.getElementById('ecCiljTeza').value = c.ciljna_teza || '';
   document.getElementById('ecStarost').value = c.starost || '';
   document.getElementById('ecVisina').value = c.visina || '';
   document.getElementById('ecAktivnost').value = c.aktivnost || '';
   document.getElementById('ecAlergije').value = c.alergije || '';
+  document.getElementById('ecPoskodbe').value = c.poskodbe || '';
+  document.getElementById('ecBolezni').value = c.bolezni || '';
+  document.getElementById('ecOpombe').value = c.opombe || '';
+  document.getElementById('ecPlacano').checked = !!c.placano;
+  document.getElementById('ecPlacanoDo').value = c.placano_do || '';
+  const sel = document.getElementById('ecPaket');
+  sel.innerHTML = '<option value="">— brez paketa —</option>' + paketi.map(function(p){
+    return '<option value="' + p.id + '"' + (c.paket_id === p.id ? ' selected' : '') + '>' + escapeHtml(p.ime) + (p.cena ? ' (' + p.cena + ' €)' : '') + '</option>';
+  }).join('');
   document.getElementById('editClientForm').classList.toggle('hidden');
 }
 async function saveClientEdits(){
@@ -2163,12 +2295,19 @@ async function saveClientEdits(){
     const payload = {
       cilj: document.getElementById('ecCilj').value.trim() || null,
       spol: document.getElementById('ecSpol').value || null,
+      zacetna_teza: document.getElementById('ecZacetnaTeza').value ? parseFloat(document.getElementById('ecZacetnaTeza').value) : null,
       trenutna_teza: document.getElementById('ecTeza').value ? parseFloat(document.getElementById('ecTeza').value) : null,
       ciljna_teza: document.getElementById('ecCiljTeza').value ? parseFloat(document.getElementById('ecCiljTeza').value) : null,
       starost: document.getElementById('ecStarost').value ? parseInt(document.getElementById('ecStarost').value) : null,
       visina: document.getElementById('ecVisina').value ? parseFloat(document.getElementById('ecVisina').value) : null,
       aktivnost: document.getElementById('ecAktivnost').value || null,
-      alergije: document.getElementById('ecAlergije').value.trim() || null
+      alergije: document.getElementById('ecAlergije').value.trim() || null,
+      poskodbe: document.getElementById('ecPoskodbe').value.trim() || null,
+      bolezni: document.getElementById('ecBolezni').value.trim() || null,
+      opombe: document.getElementById('ecOpombe').value.trim() || null,
+      paket_id: document.getElementById('ecPaket').value || null,
+      placano: document.getElementById('ecPlacano').checked,
+      placano_do: document.getElementById('ecPlacanoDo').value || null
     };
     const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + currentClientId, {
       method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
