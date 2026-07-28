@@ -792,6 +792,11 @@ async function enterApp(){
   document.getElementById('appScreen').classList.remove('hidden');
   const ime = (session.user && session.user.user_metadata && session.user.user_metadata.ime) || session.user.email || 'Trener';
   document.getElementById('whoName').textContent = ime;
+  try{
+    const bRes = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=brand_barva', { headers: authHeaders() });
+    const bRows = bRes.ok ? await bRes.json() : [];
+    if(bRows[0] && bRows[0].brand_barva){ document.documentElement.style.setProperty('--primary', bRows[0].brand_barva); }
+  }catch(e){}
   await loadClients();
   await loadVaje();
   await loadMape();
