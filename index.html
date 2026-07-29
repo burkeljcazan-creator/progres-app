@@ -189,6 +189,13 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .page-dots{display:flex;justify-content:center;gap:7px;margin-top:14px}
 .pdot{width:8px;height:8px;border-radius:50%;border:0;padding:0;background:var(--ink);opacity:.16;cursor:pointer}
 .pdot.on{opacity:1;background:var(--primary-ink)}
+.acc{border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:9px;overflow:hidden}
+.acc-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border:0;background:transparent;cursor:pointer;text-align:left;font-family:'Inter',sans-serif}
+.acc-head b{font-size:13.5px;font-weight:600;color:var(--ink);display:block}
+.acc-head em{font-style:normal;font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+.acc-arrow{font-size:20px;font-weight:800;color:var(--primary-ink);transition:transform .15s;flex-shrink:0}
+.acc.open .acc-arrow{transform:rotate(90deg)}
+.acc-body{padding:2px 15px 13px}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .sec-head h2{font-size:16px;font-weight:700}
 .add-btn{border:0;background:var(--primary);color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
@@ -1979,7 +1986,29 @@ async function loadAssignedPrograms(clientId){
     renderAssignedPrograms(await res2.json());
   }catch(err){ toast(err.message); }
 }
-function renderProgramCardHtml(p){
+function clampRows(rowsArr, groupId, limit){
+  limit = limit || 5;
+  if(rowsArr.length <= limit) return rowsArr.join('');
+  return rowsArr.slice(0, limit).join('')
+    + '<div id="clamp_' + groupId + '" class="hidden">' + rowsArr.slice(limit).join('') + '</div>'
+    + '<button class="btn-small" style="margin-top:10px;background:var(--primary-soft);color:var(--primary-ink)" id="clampbtn_' + groupId + '" onclick="toggleClamp(\'' + groupId + '\',' + rowsArr.length + ')">Pokaži vseh ' + rowsArr.length + '</button>';
+}
+function toggleClamp(id, total){
+  const box = document.getElementById('clamp_' + id);
+  const btn = document.getElementById('clampbtn_' + id);
+  if(!box) return;
+  const odprto = !box.classList.contains('hidden');
+  box.classList.toggle('hidden');
+  if(btn) btn.textContent = odprto ? ('Pokaži vseh ' + total) : 'Pokaži manj';
+}
+function toggleAcc(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('open');
+  const body = el.querySelector('.acc-body');
+  if(body) body.classList.toggle('hidden');
+}
+function renderProgramCardBodyHtml(p){
   const sorted = (p.program_vaje || []).slice().sort(function(a,b){ return (a.vrstni_red||0) - (b.vrstni_red||0); });
   const rows = sorted.map(function(pv){
     const naziv = pv.vaje ? pv.vaje.ime : 'Vaja';
@@ -1989,9 +2018,11 @@ function renderProgramCardHtml(p){
     const ogrevanje = pv.ogrevalne_serije ? ('<div style="font-size:12px;color:#9A6512;margin-top:3px">Ogrevanje: ' + escapeHtml(pv.ogrevalne_serije) + '</div>') : '';
     return '<div class="prog-ex-row" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between"><span>' + escapeHtml(naziv) + '</span><span>' + pv.serije + ' × ' + pv.ponovitve + ' · ' + teza + video + '</span></div>' + ogrevanje + opis + '</div>';
   }).join('');
-  return '<div class="program-card"><h3>' + escapeHtml(p.ime) + '</h3>'
-    + (p.opis ? '<div class="note-box">' + escapeHtml(p.opis) + '</div>' : '')
-    + (rows || '<span style="font-size:12.5px;color:var(--muted)">Brez vaj</span>') + '</div>';
+  return (p.opis ? '<div class="note-box">' + escapeHtml(p.opis) + '</div>' : '')
+    + (rows || '<span style="font-size:12.5px;color:var(--muted)">Brez vaj</span>');
+}
+function renderProgramCardHtml(p){
+  return '<div class="program-card"><h3>' + escapeHtml(p.ime) + '</h3>' + renderProgramCardBodyHtml(p) + '</div>';
 }
 async function loadTrainingLog(clientId){
   const wrap = document.getElementById('trainingLogList');
@@ -2000,7 +2031,7 @@ async function loadTrainingLog(clientId){
     if(!res.ok) throw new Error('Napaka pri nalaganju treningov.');
     const rows = await res.json();
     if(rows.length === 0){ wrap.innerHTML = '<div class="empty">Stranka še ni odkljukala nobenega treninga.</div>'; return; }
-    wrap.innerHTML = rows.map(function(t){
+    const vrstice = rows.map(function(t){
       const progIme = t.programi ? t.programi.ime : 'Program';
       const byVaja = {};
       (t.serije || []).forEach(function(s){
@@ -2010,7 +2041,8 @@ async function loadTrainingLog(clientId){
       });
       const setsHtml = Object.keys(byVaja).map(function(naziv){
         return '<div style="font-size:12px;color:var(--muted)"><b style="color:var(--ink)">' + escapeHtml(naziv) + ':</b> ' + byVaja[naziv].join(', ') + '</div>';
-      }).join('');
+      });
+    wrap.innerHTML = '<div class="card" style="margin-bottom:0">' + clampRows(vrstice, 'tlog', 5) + '</div>';
       return '<div class="prog-ex-row" style="flex-direction:column;align-items:stretch;gap:3px">'
         + '<div style="display:flex;justify-content:space-between"><span><b>' + escapeHtml(progIme) + '</b> · ' + t.datum + '</span><span class="badge-ok">Opravljeno</span></div>'
         + setsHtml
@@ -2025,7 +2057,15 @@ function renderAssignedPrograms(programi){
     wrap.innerHTML = '<div class="empty">Tej stranki še ni dodeljen noben program.</div>';
     return;
   }
-  wrap.innerHTML = programi.map(renderProgramCardHtml).join('');
+  wrap.innerHTML = programi.map(function(p, i){
+    const n = (p.program_vaje || []).length;
+    return '<div class="acc" id="accprog_' + i + '">'
+      + '<button class="acc-head" onclick="toggleAcc(\'accprog_' + i + '\')">'
+      + '<span style="min-width:0"><b>' + escapeHtml(p.ime) + '</b><em>' + vajaOblika(n) + (p.opis ? ' · ima opombo trenerja' : '') + '</em></span>'
+      + '<span class="acc-arrow">›</span></button>'
+      + '<div class="acc-body hidden">' + renderProgramCardBodyHtml(p) + '</div>'
+      + '</div>';
+  }).join('');
 }
 
 // ---------- KNJIŽNICA VAJ + MAPICE ----------
@@ -2745,14 +2785,15 @@ function renderClientProgress(meritve){
   const heatWrap = document.getElementById('cHeatCard');
   if(meritve.length > 0){ heatWrap.classList.remove('hidden'); heatWrap.innerHTML = buildHeatCalendar(meritve); }
   else { heatWrap.classList.add('hidden'); }
-  listWrap.innerHTML = meritve.slice().reverse().map(function(m){
+  const vrsticeM = meritve.slice().reverse().map(function(m){
     const parts = [];
     if(m.teza !== null && m.teza !== undefined) parts.push(m.teza + ' kg');
     if(m.kcal_zauzito !== null && m.kcal_zauzito !== undefined) parts.push(m.kcal_zauzito + ' kcal');
     if(m.koraki !== null && m.koraki !== undefined) parts.push(m.koraki + ' korakov');
     if(m.spanje_ure !== null && m.spanje_ure !== undefined) parts.push(m.spanje_ure + ' h spanja');
     return '<div class="prog-ex-row"><span>' + m.datum + (m.opomba ? ' · ' + escapeHtml(m.opomba) : '') + '</span><span>' + parts.join(' · ') + '</span></div>';
-  }).join('');
+  });
+  listWrap.innerHTML = '<div class="card" style="margin-bottom:0"><div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:10px">Vsi vnosi</div>' + clampRows(vrsticeM, 'merC', 5) + '</div>';
 }
 async function loadClientPaketi(){
   const wrap = document.getElementById('clientPaketList');
@@ -4297,14 +4338,15 @@ function renderProgress(meritve){
   const heatWrap = document.getElementById('heatCard');
   if(meritve.length > 0){ heatWrap.classList.remove('hidden'); heatWrap.innerHTML = buildHeatCalendar(meritve); }
   else { heatWrap.classList.add('hidden'); }
-  listWrap.innerHTML = meritve.slice().reverse().map(function(m){
+  const vrsticeM = meritve.slice().reverse().map(function(m){
     const parts = [];
     if(m.teza !== null && m.teza !== undefined) parts.push(m.teza + ' kg');
     if(m.kcal_zauzito !== null && m.kcal_zauzito !== undefined) parts.push(m.kcal_zauzito + ' kcal');
     if(m.koraki !== null && m.koraki !== undefined) parts.push(m.koraki + ' korakov');
     if(m.spanje_ure !== null && m.spanje_ure !== undefined) parts.push(m.spanje_ure + ' h spanja');
     return '<div class="prog-ex-row"><span>' + m.datum + (m.opomba ? ' · ' + escapeHtml(m.opomba) : '') + '</span><span>' + parts.join(' · ') + ' <button onclick="deleteMeritev(\'' + m.id + '\')" style="border:0;background:transparent;color:var(--danger);cursor:pointer;font-size:14px;margin-left:8px">×</button></span></div>';
-  }).join('');
+  });
+  listWrap.innerHTML = '<div class="card" style="margin-bottom:0"><div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:10px">Vsi vnosi</div>' + clampRows(vrsticeM, 'merT', 5) + '</div>';
 }
 
 // ---------- POMOŽNE ----------
