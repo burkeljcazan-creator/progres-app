@@ -837,18 +837,32 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
     <!-- ===== EKRAN: NAROČNINE / PAKETI ===== -->
     <div id="screenNarocnine" class="hidden">
-      <div class="sec-head"><h2>Plačilni račun</h2></div>
-      <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:13.5px;font-weight:600;margin-bottom:3px">⏳ Ni povezano</div>
-          <div style="font-size:12px;color:var(--muted)">Samodejno prejemanje plačil od strank naravnost na tvoj račun bo na voljo kmalu — zahteva dodatno tehnično nastavitev.</div>
+      <div class="danes-head">
+        <div><h1>Naročnine</h1><div class="meta" id="narocnineMeta"></div></div>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="background:var(--primary-soft);color:var(--primary-ink);font-size:12px;padding:7px 12px" onclick="exportNarocnineCsv()">⤓ Izvozi CSV</button>
+          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="togglePaketForm()">+ Nov paket</button>
         </div>
-        <button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink);white-space:nowrap" onclick="toast('Ta funkcija še ni na voljo — prihaja v naslednji fazi razvoja.')">Poveži račun</button>
       </div>
 
+      <div id="narocnineKpis"></div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Stranke in plačila</h3>
+          <div class="tabs" id="narocnineFilter">
+            <button class="tab on" onclick="setNarocnineFilter('vse',this)">Vse</button>
+            <button class="tab" onclick="setNarocnineFilter('zapadlo',this)">Zapadlo</button>
+            <button class="tab" onclick="setNarocnineFilter('kmalu',this)">Poteče v 14 dneh</button>
+          </div>
+        </div>
+        <div class="table-scroll"><table class="data-table" id="narocnineTable"></table></div>
+      </div>
+
+      <div class="card hidden" id="opomnikiCard" style="margin-bottom:16px"></div>
+
       <div class="sec-head">
-        <h2>Tvoji paketi</h2>
-        <button class="add-btn" onclick="togglePaketForm()">+ Nov paket</button>
+        <h2 style="font-size:14.5px">Paketi</h2>
       </div>
 
       <div class="card hidden" id="paketForm">
@@ -1348,12 +1362,130 @@ function setTopTab(tab){
   document.getElementById('tabObrokiTop').classList.toggle('on', tab==='obroki');
   document.getElementById('tabNarocnineTop').classList.toggle('on', tab==='narocnine');
 }
+let narocnineFilter = 'vse';
+function dniDo(datum){
+  if(!datum) return null;
+  return Math.round((new Date(datum + 'T00:00:00') - new Date(new Date().toISOString().slice(0,10) + 'T00:00:00')) / 86400000);
+}
+function narocninaStatus(c){
+  const d = dniDo(c.placano_do);
+  if(!c.paket_id) return { kljuc:'brez', txt:'Brez paketa', cls:'badge-mid' };
+  if(d === null) return c.placano ? { kljuc:'placano', txt:'Plačano', cls:'badge-ok' } : { kljuc:'zapadlo', txt:'Ni plačano', cls:'badge-bad' };
+  if(d < 0) return { kljuc:'zapadlo', txt:'Zapadlo ' + Math.abs(d) + ' dni', cls:'badge-bad' };
+  if(d <= 14) return { kljuc:'kmalu', txt:'Poteče v ' + d + ' dneh', cls:'badge-mid' };
+  return { kljuc:'placano', txt:'Plačano', cls:'badge-ok' };
+}
+function paketCena(id){
+  const p = paketi.find(function(x){ return x.id === id; });
+  return (p && p.cena) ? Number(p.cena) : 0;
+}
+function narocnineVrstice(){
+  return clients.filter(function(c){ return c.paket_id; }).map(function(c){
+    return { c: c, st: narocninaStatus(c), cena: paketCena(c.paket_id) };
+  });
+}
+function setNarocnineFilter(f, btn){
+  narocnineFilter = f;
+  document.querySelectorAll('#narocnineFilter .tab').forEach(function(t){ t.classList.remove('on'); });
+  if(btn) btn.classList.add('on');
+  renderNarocnineTable();
+}
+function renderNarocnineTable(){
+  const table = document.getElementById('narocnineTable');
+  if(!table) return;
+  let rows = narocnineVrstice();
+  if(narocnineFilter === 'zapadlo') rows = rows.filter(function(r){ return r.st.kljuc === 'zapadlo'; });
+  if(narocnineFilter === 'kmalu') rows = rows.filter(function(r){ return r.st.kljuc === 'kmalu'; });
+  const head = '<thead><tr>' + ['Stranka','Paket','Plačano do','Status','Znesek'].map(function(h){ return '<th>' + h + '</th>'; }).join('') + '</tr></thead>';
+  if(rows.length === 0){
+    table.innerHTML = head + '<tbody><tr><td colspan="5" class="dim" style="padding:18px;text-align:center">Ni zadetkov.</td></tr></tbody>';
+    return;
+  }
+  table.innerHTML = head + '<tbody>' + rows.map(function(r){
+    return '<tr onclick="openClientFromTable(\'' + r.c.id + '\')">'
+      + '<td><b>' + escapeHtml(r.c.ime) + '</b></td>'
+      + '<td>' + escapeHtml(paketIme(r.c.paket_id)) + '</td>'
+      + '<td>' + (r.c.placano_do || '—') + '</td>'
+      + '<td><span class="' + r.st.cls + '">' + r.st.txt + '</span></td>'
+      + '<td class="num">' + (r.cena ? r.cena + ' €' : '—') + '</td>'
+      + '</tr>';
+  }).join('') + '</tbody>';
+}
+function renderNarocnineDashboard(){
+  const vrstice = narocnineVrstice();
+  const aktivne = vrstice.filter(function(r){ return r.st.kljuc === 'placano' || r.st.kljuc === 'kmalu'; });
+  const zapadle = vrstice.filter(function(r){ return r.st.kljuc === 'zapadlo'; });
+  const prihodek = aktivne.reduce(function(a,r){ return a + r.cena; }, 0);
+  const neplacano = zapadle.reduce(function(a,r){ return a + r.cena; }, 0);
+  const povprecje = aktivne.length ? Math.round(prihodek / aktivne.length) : 0;
+
+  const meta = document.getElementById('narocnineMeta');
+  if(meta) meta.textContent = aktivne.length + ' aktivnih naročnin · ' + zapadle.length + ' zapadlih plačil';
+
+  document.getElementById('narocnineKpis').innerHTML = '<div class="stat-strip" style="margin-bottom:16px">'
+    + '<div class="stat" style="min-width:130px"><b>' + prihodek + ' €</b><span>mesečni prihodek</span></div>'
+    + '<div class="stat" style="min-width:130px"><b>' + aktivne.length + '</b><span>aktivnih naročnin</span></div>'
+    + '<div class="stat" style="min-width:130px"><b' + (zapadle.length ? ' style="color:var(--danger)"' : '') + '>' + zapadle.length + '</b><span>' + (neplacano ? 'zapadlo · ' + neplacano + ' €' : 'zapadlih plačil') + '</span></div>'
+    + '<div class="stat" style="min-width:130px"><b>' + povprecje + ' €</b><span>povprečje na stranko</span></div>'
+    + '</div>';
+
+  const opomniki = vrstice.filter(function(r){ return r.st.kljuc === 'zapadlo' || r.st.kljuc === 'kmalu'; });
+  const oc = document.getElementById('opomnikiCard');
+  if(opomniki.length === 0){ oc.classList.add('hidden'); }
+  else {
+    oc.classList.remove('hidden');
+    oc.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
+      + '<h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">Opomniki</h3>'
+      + '<span class="badge-mid">' + opomniki.length + ' čaka</span></div>'
+      + opomniki.map(function(r){
+        return '<div class="prog-ex-row" style="align-items:center">'
+          + '<span><b>' + escapeHtml(r.c.ime) + '</b><br><span style="font-size:11.5px;color:var(--muted)">' + r.st.txt + ' · ' + escapeHtml(paketIme(r.c.paket_id)) + '</span></span>'
+          + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="opomniStranko(\'' + r.c.id + '\')">' + (r.st.kljuc === 'zapadlo' ? 'Pošlji' : 'Najavi') + '</button>'
+          + '</div>';
+      }).join('');
+  }
+  renderNarocnineTable();
+}
+function opomniStranko(id){
+  const c = clients.find(function(x){ return x.id === id; });
+  if(!c) return;
+  const st = narocninaStatus(c);
+  const besedilo = st.kljuc === 'zapadlo'
+    ? 'Živjo ' + c.ime.split(' ')[0] + ', tvoja naročnina (' + paketIme(c.paket_id) + ') je zapadla. Ko urediš plačilo, gremo naprej po načrtu 💪'
+    : 'Živjo ' + c.ime.split(' ')[0] + ', tvoja naročnina (' + paketIme(c.paket_id) + ') poteče ' + (c.placano_do || 'kmalu') + '. Javi, če jo podaljšaš 🙂';
+  openClientDetail(id);
+  setTimeout(function(){
+    openClientChatScreen();
+    setTimeout(function(){
+      const inp = document.getElementById('chatInputTrener');
+      if(inp){ inp.value = besedilo; inp.focus(); }
+      toast('Sporočilo pripravljeno — preglej in pošlji.');
+    }, 250);
+  }, 150);
+}
+function exportNarocnineCsv(){
+  const esc = function(v){
+    if(v === null || v === undefined) return '';
+    const t = String(v);
+    return (t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t.replace(/"/g,'""') + '"' : t;
+  };
+  const lines = ['Stranka;Paket;Placano do;Status;Znesek EUR'];
+  narocnineVrstice().forEach(function(r){
+    lines.push([r.c.ime, paketIme(r.c.paket_id), r.c.placano_do, r.st.txt, r.cena].map(esc).join(';'));
+  });
+  const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'progres-narocnine-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV izvožen ✓');
+}
 function showNarocnine(){
   hideAllScreens();
   document.getElementById('screenNarocnine').classList.remove('hidden');
   document.getElementById('topTabs').classList.remove('hidden');
   setTopTab('narocnine');
-  loadPaketi();
+  loadPaketi().then(renderNarocnineDashboard);
 }
 function showObroki(){
   hideAllScreens();
