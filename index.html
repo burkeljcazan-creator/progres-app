@@ -706,6 +706,9 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           <div class="field"><label>Ponovi novo geslo</label><input type="password" id="profNewPass2"></div>
           <button class="btn" id="profPassBtn" onclick="changePassword()">Spremeni geslo</button>
         </div>
+        <div class="card">
+          <button class="btn" style="background:var(--danger-soft);color:var(--danger)" onclick="handleLogout()">Odjava</button>
+        </div>
       </div>
 
       <!-- BRANDING -->
@@ -915,6 +918,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <button class="sn-item" id="snNapredek" onclick="showClientProgress()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Napredek</button>
       <button class="sn-item" id="snKlepet" onclick="showClientChat()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M21 12a8 8 0 01-8 8H4l2-3a8 8 0 1115-5z"/></svg>Klepet</button>
       <button class="sn-item" id="snGradiva" onclick="showClientGradiva()"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Gradiva</button>
+      <button class="sn-item" id="snNastavitveC" onclick="showClientNastavitve()"><svg viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Nastavitve</button>
     </nav>
     <div class="sn-user" onclick="showClientNarocnina()">
       <div class="sn-ava" id="clientSideInitials">?</div>
@@ -931,6 +935,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <div class="profile-menu hidden" id="clientProfileMenu">
         <button onclick="showClientGradiva()">Gradiva</button>
         <button onclick="showClientNarocnina()">Naročnina</button>
+        <button onclick="showClientNastavitve()">Nastavitve</button>
         <button class="danger" onclick="handleLogout()">Odjava</button>
       </div>
     </div>
@@ -1020,6 +1025,39 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <div class="meta">Dokumenti in učna gradiva od tvojega trenerja</div>
       </div>
       <div id="clientGradivaList"></div>
+    </div>
+
+    <div id="clientScreenNastavitve" class="hidden">
+      <div class="client-header">
+        <h2>Nastavitve</h2>
+        <div class="meta">Tvoj račun in videz aplikacije</div>
+      </div>
+      <div class="card" style="max-width:520px">
+        <div class="field"><label>Ime</label><input type="text" id="cnIme"></div>
+        <div class="field"><label>E-pošta</label><input type="text" id="cnEmail" disabled style="background:var(--bg);color:var(--muted)"></div>
+        <button class="btn" id="cnImeBtn" onclick="saveClientProfileName()">Shrani ime</button>
+      </div>
+      <div class="sec-head"><h2 style="font-size:14.5px">Sprememba gesla</h2></div>
+      <div class="card" style="max-width:520px">
+        <div class="field"><label>Novo geslo (vsaj 6 znakov)</label><input type="password" id="cnPass1"></div>
+        <div class="field"><label>Ponovi novo geslo</label><input type="password" id="cnPass2"></div>
+        <button class="btn" id="cnPassBtn" onclick="changeClientPassword()">Spremeni geslo</button>
+      </div>
+      <div class="sec-head"><h2 style="font-size:14.5px">Videz</h2></div>
+      <div class="card" style="max-width:520px">
+        <div style="display:flex;gap:8px">
+          <button class="btn-small" id="cThemeLightBtn" onclick="setTheme('light')">☀️ Svetla</button>
+          <button class="btn-small" id="cThemeDarkBtn" onclick="setTheme('dark')">🌙 Temna</button>
+        </div>
+      </div>
+      <div class="sec-head"><h2 style="font-size:14.5px">Moji podatki</h2></div>
+      <div class="card" style="max-width:520px">
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Cilj, teže, alergije, število obrokov in ostalo iz uvodnega vprašalnika.</p>
+        <button class="btn" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openQuestionnaireFromSettings()">Ponovno izpolni vprašalnik</button>
+      </div>
+      <div class="card" style="max-width:520px;margin-top:24px">
+        <button class="btn" style="background:var(--danger-soft);color:var(--danger)" onclick="handleLogout()">Odjava</button>
+      </div>
     </div>
 
     <nav class="bottom-nav" id="clientBottomNav">
@@ -1445,10 +1483,13 @@ function setTheme(theme){
   document.body.classList.toggle('dark-theme', theme === 'dark');
   applyBrandColor(brandColorCurrent);
   localStorage.setItem('progres_theme', theme);
-  document.getElementById('themeLightBtn').style.background = theme === 'light' ? 'var(--primary-soft)' : 'transparent';
-  document.getElementById('themeLightBtn').style.color = theme === 'light' ? 'var(--primary)' : 'var(--muted)';
-  document.getElementById('themeDarkBtn').style.background = theme === 'dark' ? 'var(--primary-soft)' : 'transparent';
-  document.getElementById('themeDarkBtn').style.color = theme === 'dark' ? 'var(--primary)' : 'var(--muted)';
+  [['themeLightBtn','light'],['themeDarkBtn','dark'],['cThemeLightBtn','light'],['cThemeDarkBtn','dark']].forEach(function(p){
+    const el = document.getElementById(p[0]);
+    if(!el) return;
+    const on = theme === p[1];
+    el.style.background = on ? 'var(--primary-soft)' : 'transparent';
+    el.style.color = on ? 'var(--primary-ink)' : 'var(--muted)';
+  });
 }
 function applyStoredTheme(){
   const t = localStorage.getItem('progres_theme') || 'light';
@@ -2372,7 +2413,7 @@ async function deleteProgramTemplate(id){
 // ---------- STRANKIN POGLED ----------
 // ---------- STRANKIN POGLED ----------
 function hideAllClientScreens(){
-  ['clientScreenDanes','clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress','clientScreenNutrition','clientScreenGradiva'].forEach(function(id){
+  ['clientScreenDanes','clientScreenPrograms','clientScreenChat','clientScreenNarocnina','clientScreenProgress','clientScreenNutrition','clientScreenGradiva','clientScreenNastavitve'].forEach(function(id){
     const e = document.getElementById(id); if(e) e.classList.add('hidden');
   });
   ['bnDanes','bnTrening','bnPrehrana','bnNapredek','bnKlepet'].forEach(function(id){
@@ -2384,7 +2425,7 @@ function setBottomTab(id){
   const e = document.getElementById(id);
   if(e) e.classList.add('on');
   const par = { bnDanes:'snDanes', bnTrening:'snTrening', bnPrehrana:'snPrehrana', bnNapredek:'snNapredek', bnKlepet:'snKlepet' };
-  ['snDanes','snTrening','snPrehrana','snNapredek','snKlepet','snGradiva'].forEach(function(x){
+  ['snDanes','snTrening','snPrehrana','snNapredek','snKlepet','snGradiva','snNastavitveC'].forEach(function(x){
     const el = document.getElementById(x); if(el) el.classList.toggle('on', par[id] === x);
   });
 }
@@ -2512,6 +2553,57 @@ function sparkline(entries){
 function openClientProgramFromDanes(programId){
   showClientPrograms();
   setTimeout(function(){ openClientProgramDetail(programId); }, 260);
+}
+function showClientNastavitve(){
+  stopClientChatPolling();
+  hideAllClientScreens();
+  document.getElementById('clientScreenNastavitve').classList.remove('hidden');
+  const sn = document.getElementById('snNastavitveC'); if(sn) sn.classList.add('on');
+  document.getElementById('cnIme').value = (clientProfile && clientProfile.ime) || '';
+  document.getElementById('cnEmail').value = (session.user && session.user.email) || '';
+  setTheme(localStorage.getItem('progres_theme') || 'light');
+}
+async function saveClientProfileName(){
+  const btn = document.getElementById('cnImeBtn');
+  const ime = document.getElementById('cnIme').value.trim();
+  if(!ime){ toast('Vpiši ime.'); return; }
+  btn.disabled = true; btn.textContent = 'Shranjujem...';
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + clientProfile.id, {
+      method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify({ ime: ime })
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju imena.');
+    clientProfile = (await res.json())[0];
+    document.getElementById('clientWhoName').textContent = ime;
+    const zac = ime.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+    document.getElementById('clientAvatarInitials').textContent = zac;
+    document.getElementById('clientSideInitials').textContent = zac;
+    document.getElementById('clientSideName').textContent = ime;
+    toast('Ime shranjeno ✓');
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Shrani ime'; }
+}
+async function changeClientPassword(){
+  const p1 = document.getElementById('cnPass1').value;
+  const p2 = document.getElementById('cnPass2').value;
+  if(!p1 || p1.length < 6){ toast('Geslo naj ima vsaj 6 znakov.'); return; }
+  if(p1 !== p2){ toast('Gesli se ne ujemata.'); return; }
+  const btn = document.getElementById('cnPassBtn');
+  btn.disabled = true; btn.textContent = 'Spreminjam...';
+  try{
+    const res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+      method:'PUT', headers: authHeaders(), body: JSON.stringify({ password: p1 })
+    });
+    if(!res.ok){ const e = await res.json().catch(function(){return{};}); throw new Error(e.msg || 'Napaka pri spremembi gesla.'); }
+    document.getElementById('cnPass1').value = '';
+    document.getElementById('cnPass2').value = '';
+    toast('Geslo spremenjeno ✓');
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Spremeni geslo'; }
+}
+function openQuestionnaireFromSettings(){
+  document.getElementById('clientAppScreen').classList.add('hidden');
+  showOnboardingQuestionnaire();
 }
 async function showClientGradiva(){
   stopClientChatPolling();
