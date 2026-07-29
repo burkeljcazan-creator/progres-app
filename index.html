@@ -196,6 +196,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .acc-arrow{font-size:20px;font-weight:800;color:var(--primary-ink);transition:transform .15s;flex-shrink:0}
 .acc.open .acc-arrow{transform:rotate(90deg)}
 .acc-body{padding:2px 15px 13px}
+.day-sel{border:1px solid var(--line);border-radius:8px;padding:5px 7px;font-size:11.5px;font-family:'Inter',sans-serif;background:var(--card);color:var(--ink);flex-shrink:0}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .sec-head h2{font-size:16px;font-weight:700}
 .add-btn{border:0;background:var(--primary);color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
@@ -440,20 +441,20 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         </div>
         <div id="progressList" style="margin-bottom:20px"></div>
   
-        <div class="sec-head">
-          <h2>Programi</h2>
-          <div style="display:flex;gap:8px">
-            <button class="add-btn" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="toggleAssignPicker()">+ Dodeli obstoječi</button>
-            <button class="add-btn" onclick="openProgramBuilder(currentClientId)">+ Nov program</button>
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Programi</h3>
+            <div style="display:flex;gap:8px">
+              <button class="add-btn" style="background:var(--primary-soft);color:var(--primary-ink);font-size:12px;padding:7px 12px" onclick="toggleAssignPicker()">+ Dodeli obstoječi</button>
+              <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="openProgramBuilder(currentClientId)">+ Nov program</button>
+            </div>
           </div>
+          <div class="hidden" id="assignPicker" style="margin-bottom:12px">
+            <label style="font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:8px">Izberi obstoječi program</label>
+            <div id="assignPickerChips"></div>
+          </div>
+          <div id="programList"></div>
         </div>
-  
-        <div class="card hidden" id="assignPicker">
-          <label style="font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:8px">Izberi obstoječi program</label>
-          <div id="assignPickerChips"></div>
-        </div>
-  
-        <div id="programList"></div>
   
         <div class="sec-head"><h2 style="font-size:14.5px">Opravljeni treningi</h2></div>
         <div id="trainingLogList" style="margin-bottom:20px"></div>
@@ -515,7 +516,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         </div>
   
         <div class="sec-head">
-          <h2 style="font-size:14.5px">Prehrana</h2>
+          <h2 style="font-size:14.5px">Dnevni cilji</h2>
           <button class="add-btn" style="background:var(--primary-soft);color:var(--primary-ink);font-size:12px;padding:7px 12px" onclick="toggleNutritionTargetForm()">Nastavi cilje</button>
         </div>
         <div class="card hidden" id="nutritionTargetForm">
@@ -531,7 +532,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           <button class="btn" id="ntSaveBtn" onclick="saveNutritionTargets()">Shrani cilje</button>
         </div>
         <div class="card" id="nutritionTargets"></div>
-        <div id="mealSuitabilityList" style="margin-bottom:20px"></div>
+
   
         </div>
       </div>
@@ -958,6 +959,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <h2>Tvoji programi</h2>
         <div class="meta" id="clientMeta"></div>
       </div>
+      <button class="dashed-btn" onclick="downloadTreningIcs()">🗓 Dodaj treninge v svoj koledar</button>
       <div id="clientProgramList"></div>
       <div id="clientProgramDetailWrap" class="hidden"></div>
     </div>
@@ -1975,9 +1977,11 @@ async function assignExistingProgram(programId){
 
 async function loadAssignedPrograms(clientId){
   try{
-    const res1 = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientId + '&select=program_id', { headers: authHeaders() });
+    const res1 = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientId + '&select=program_id,dan', { headers: authHeaders() });
     if(!res1.ok) throw new Error('Napaka pri nalaganju dodelitev.');
     const dod = await res1.json();
+    assignedDanMap = {};
+    dod.forEach(function(d){ assignedDanMap[d.program_id] = d.dan || ''; });
     if(dod.length === 0){ renderAssignedPrograms([]); return; }
     const ids = dod.map(function(d){ return d.program_id; }).join(',');
     const url2 = SUPABASE_URL + '/rest/v1/programi?id=in.(' + ids + ')&select=id,ime,opis,program_vaje(serije,ponovitve,priporocena_teza,ogrevalne_serije,vrstni_red,vaje(ime,opis,video_url))';
@@ -2051,6 +2055,18 @@ async function loadTrainingLog(clientId){
     }).join('');
   }catch(err){ wrap.innerHTML = '<div class="empty">Napaka pri nalaganju.</div>'; }
 }
+let assignedDanMap = {};
+const DNI_KRATKI = ['pon','tor','sre','čet','pet','sob','ned'];
+async function setProgramDay(programId, dan){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?program_id=eq.' + programId + '&stranka_id=eq.' + currentClientId, {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ dan: dan || null })
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju dneva.');
+    assignedDanMap[programId] = dan || '';
+    toast('Dan shranjen ✓');
+  }catch(err){ toast(err.message); }
+}
 function renderAssignedPrograms(programi){
   const wrap = document.getElementById('programList');
   if(!programi || programi.length === 0){
@@ -2062,7 +2078,12 @@ function renderAssignedPrograms(programi){
     return '<div class="acc" id="accprog_' + i + '">'
       + '<button class="acc-head" onclick="toggleAcc(\'accprog_' + i + '\')">'
       + '<span style="min-width:0"><b>' + escapeHtml(p.ime) + '</b><em>' + vajaOblika(n) + (p.opis ? ' · ima opombo trenerja' : '') + '</em></span>'
-      + '<span class="acc-arrow">›</span></button>'
+      + '<span style="display:flex;align-items:center;gap:9px;flex-shrink:0">'
+      + '<select class="day-sel" onclick="event.stopPropagation()" onchange="setProgramDay(\'' + p.id + '\', this.value)">'
+      + '<option value="">— dan —</option>'
+      + DNI_KRATKI.map(function(d){ return '<option value="' + d + '"' + (assignedDanMap[p.id] === d ? ' selected' : '') + '>' + d + '</option>'; }).join('')
+      + '</select>'
+      + '<span class="acc-arrow">›</span></span></button>'
       + '<div class="acc-body hidden">' + renderProgramCardBodyHtml(p) + '</div>'
       + '</div>';
   }).join('');
@@ -2513,21 +2534,24 @@ async function renderDanes(){
   try{
     const [mRes, pRes] = await Promise.all([
       fetch(SUPABASE_URL + '/rest/v1/meritve?stranka_id=eq.' + clientProfile.id + '&select=*&order=datum.asc', { headers: authHeaders(), cache:'no-store' }),
-      fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientProfile.id + '&select=program_id,programi(id,ime,program_vaje(serije))', { headers: authHeaders(), cache:'no-store' })
+      fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientProfile.id + '&select=program_id,dan,programi(id,ime,program_vaje(serije))', { headers: authHeaders(), cache:'no-store' })
     ]);
     const meritve = mRes.ok ? await mRes.json() : [];
     const dod = pRes.ok ? await pRes.json() : [];
     const danesM = meritve.filter(function(m){ return m.datum === danesIso; })[0] || {};
 
     // današnji trening
-    const prog = dod.length > 0 ? dod[0].programi : null;
+    const danesDan = ['ned','pon','tor','sre','čet','pet','sob'][new Date().getDay()];
+    const zaDanes = dod.find(function(d){ return d.dan === danesDan; });
+    const prog = zaDanes ? zaDanes.programi : (dod.length > 0 ? dod[0].programi : null);
+    const progJeDanes = !!zaDanes;
     const tw = document.getElementById('danesTrening');
     if(prog){
       const stVaj = (prog.program_vaje || []).length;
       const stSerij = (prog.program_vaje || []).reduce(function(a,v){ return a + (v.serije || 0); }, 0);
       tw.innerHTML = '<div class="card" style="margin-bottom:14px">'
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">'
-        + '<div><div class="eyebrow">Današnji trening</div>'
+        + '<div><div class="eyebrow">' + (progJeDanes ? 'Današnji trening' : 'Tvoj program') + '</div>'
         + '<div style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:20px;color:var(--ink)">' + escapeHtml(prog.ime) + '</div>'
         + '<div style="font-size:12.5px;color:var(--muted);margin-top:5px">' + vajaOblika(stVaj) + ' · ' + stSerij + ' serij</div></div>'
         + '<button class="btn btn-inline btn-mint" onclick="openClientProgramFromDanes(\'' + prog.id + '\')">Beleži trening</button>'
@@ -2861,9 +2885,11 @@ async function sendChatMessageStranka(){
 }
 async function loadClientOwnPrograms(){
   try{
-    const res1 = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientProfile.id + '&select=program_id', { headers: authHeaders(), cache: 'no-store' });
+    const res1 = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?stranka_id=eq.' + clientProfile.id + '&select=program_id,dan', { headers: authHeaders(), cache: 'no-store' });
     if(!res1.ok) throw new Error('Napaka pri nalaganju programov.');
     const dod = await res1.json();
+    clientDanMap = {};
+    dod.forEach(function(d){ clientDanMap[d.program_id] = d.dan || ''; });
     if(dod.length === 0){ renderClientPrograms([]); return; }
     const ids = dod.map(function(d){ return d.program_id; }).join(',');
     const url2 = SUPABASE_URL + '/rest/v1/programi?id=in.(' + ids + ')&select=id,ime,opis,program_vaje(vaja_id,serije,ponovitve,priporocena_teza,ogrevalne_serije,vrstni_red,vaje(id,ime,opis,video_url,korak_povecanja_kg))';
@@ -2876,6 +2902,28 @@ async function loadClientOwnPrograms(){
 let clientWorkoutState = {};
 
 let clientProgramsData = [];
+let clientDanMap = {};
+function downloadTreningIcs(){
+  const zDnevi = clientProgramsData.filter(function(p){ return clientDanMap[p.id]; });
+  if(zDnevi.length === 0){ toast('Trener še ni določil dni treningov.'); return; }
+  const BYDAY = { pon:'MO', tor:'TU', sre:'WE', 'čet':'TH', pet:'FR', sob:'SA', ned:'SU' };
+  const ORDER = { ned:0, pon:1, tor:2, sre:3, 'čet':4, pet:5, sob:6 };
+  const pad = function(n){ return String(n).padStart(2,'0'); };
+  const events = zDnevi.map(function(p){
+    const dan = clientDanMap[p.id];
+    const d = new Date();
+    d.setDate(d.getDate() + ((ORDER[dan] - d.getDay() + 7) % 7));
+    const dt = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate());
+    return 'BEGIN:VEVENT\r\nUID:progres-' + p.id + '@progres\r\nDTSTAMP:' + dt + 'T000000Z\r\nDTSTART;VALUE=DATE:' + dt + '\r\nRRULE:FREQ=WEEKLY;BYDAY=' + BYDAY[dan] + '\r\nSUMMARY:Trening: ' + p.ime.replace(/[,;\\]/g, ' ') + '\r\nEND:VEVENT';
+  }).join('\r\n');
+  const ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Progres//SL\r\n' + events + '\r\nEND:VCALENDAR';
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'progres-treningi.ics'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Koledar prenesen ✓ Odpri datoteko, da se doda.');
+}
 
 function renderClientPrograms(programi){
   clientProgramsData = programi || [];
@@ -2892,7 +2940,9 @@ function renderClientPrograms(programi){
     return '<div class="program-card" style="cursor:pointer" onclick="openClientProgramDetail(\'' + p.id + '\')">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'
       + '<div><h3 style="font-size:16px;margin-bottom:4px">' + escapeHtml(p.ime) + '</h3><div style="font-size:12.5px;color:var(--muted)">' + vajaOblika(exCount) + (p.opis ? ' · ima opombo trenerja' : '') + '</div></div>'
-      + '<span style="color:var(--primary-ink);font-weight:800;font-size:22px;flex-shrink:0">›</span>'
+      + '<span style="display:flex;align-items:center;gap:9px;flex-shrink:0">'
+      + (clientDanMap[p.id] ? '<span class="badge-mid">' + clientDanMap[p.id] + '</span>' : '')
+      + '<span style="color:var(--primary-ink);font-weight:800;font-size:22px">›</span></span>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -3329,7 +3379,6 @@ function renderNutritionSection(c){
       + cilji.map(function(x){ return '<div><div style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:19px">' + x[0].replace(/<\/?b>/g,'') + '</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + x[1] + '</div></div>'; }).join('')
       + '</div>';
   }
-  renderMealSuitability(c);
 }
 function renderMealSuitability(c){
   const wrap = document.getElementById('mealSuitabilityList');
