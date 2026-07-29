@@ -841,29 +841,53 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <div><h1>Naročnine</h1><div class="meta" id="narocnineMeta"></div></div>
         <div style="display:flex;gap:8px">
           <button class="add-btn" style="background:var(--primary-soft);color:var(--primary-ink);font-size:12px;padding:7px 12px" onclick="exportNarocnineCsv()">⤓ Izvozi CSV</button>
-          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="togglePaketForm()">+ Nov paket</button>
+          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="togglePlaciloForm()">+ Zabeleži plačilo</button>
         </div>
       </div>
 
       <div id="narocnineKpis"></div>
 
-      <div class="card" style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-          <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Stranke in plačila</h3>
-          <div class="tabs" id="narocnineFilter">
-            <button class="tab on" onclick="setNarocnineFilter('vse',this)">Vse</button>
-            <button class="tab" onclick="setNarocnineFilter('zapadlo',this)">Zapadlo</button>
-            <button class="tab" onclick="setNarocnineFilter('kmalu',this)">Poteče v 14 dneh</button>
-          </div>
+      <div class="card hidden" id="placiloForm" style="margin-bottom:16px;max-width:560px">
+        <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;margin-bottom:12px">Zabeleži plačilo</h3>
+        <div class="grid2">
+          <div class="field"><label>Stranka *</label><select id="plStranka" onchange="prefillPlacilo()" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)"></select></div>
+          <div class="field"><label>Znesek (€) *</label><input type="number" step="0.01" id="plZnesek"></div>
         </div>
-        <div class="table-scroll"><table class="data-table" id="narocnineTable"></table></div>
+        <div class="grid2">
+          <div class="field"><label>Datum plačila</label><input type="date" id="plDatum"></div>
+          <div class="field"><label>Naročnina velja do</label><input type="date" id="plDo"></div>
+        </div>
+        <button class="btn" id="plSaveBtn" onclick="savePlacilo()">Shrani plačilo</button>
       </div>
 
-      <div class="card hidden" id="opomnikiCard" style="margin-bottom:16px"></div>
-
-      <div class="sec-head">
-        <h2 style="font-size:14.5px">Paketi</h2>
+      <div class="cd-cols">
+        <div class="cd-main">
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+              <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Stranke in plačila</h3>
+              <div class="tabs" id="narocnineFilter">
+                <button class="tab on" onclick="setNarocnineFilter('vse',this)">Vse</button>
+                <button class="tab" onclick="setNarocnineFilter('zapadlo',this)">Zapadlo</button>
+                <button class="tab" onclick="setNarocnineFilter('kmalu',this)">Poteče v 14 dneh</button>
+              </div>
+            </div>
+            <div class="table-scroll"><table class="data-table" id="narocnineTable"></table></div>
+          </div>
+          <div class="card" id="prihodekCard" style="margin-bottom:16px"></div>
+        </div>
+        <div class="cd-side">
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+              <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Paketi</h3>
+              <button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="togglePaketForm()">+ Nov</button>
+            </div>
+            <div id="paketList"></div>
+          </div>
+          <div class="card hidden" id="opomnikiCard" style="margin-bottom:16px"></div>
+        </div>
       </div>
+
+      <div class="hidden">
 
       <div class="card hidden" id="paketForm">
         <div class="grid2">
@@ -876,8 +900,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <p style="font-size:11.5px;color:var(--muted);margin:-6px 0 12px">Ustvariš jo v svojem Stripe računu (Payment Links) — stranka bo ob kliku "Naroči se" preusmerjena tja. Brez povezave se paket prikaže samo informativno.</p>
         <button class="btn" id="pkSaveBtn" onclick="savePaket()">Shrani paket</button>
       </div>
-
-      <div id="paketList"></div>
+      </div>
     </div>
 
   </div>
@@ -1363,6 +1386,108 @@ function setTopTab(tab){
   document.getElementById('tabNarocnineTop').classList.toggle('on', tab==='narocnine');
 }
 let narocnineFilter = 'vse';
+let placila = [];
+const SLO_MES_KRATKI = ['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'];
+async function loadPlacila(){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/placila?trener_id=eq.' + session.user.id + '&select=*&order=datum.desc', { headers: authHeaders(), cache:'no-store' });
+    placila = res.ok ? await res.json() : [];
+  }catch(e){ placila = []; }
+}
+function togglePlaciloForm(){
+  const f = document.getElementById('placiloForm');
+  f.classList.toggle('hidden');
+  if(f.classList.contains('hidden')) return;
+  const sel = document.getElementById('plStranka');
+  sel.innerHTML = '<option value="">— izberi —</option>' + clients.map(function(c){
+    return '<option value="' + c.id + '">' + escapeHtml(c.ime) + '</option>';
+  }).join('');
+  document.getElementById('plDatum').value = new Date().toISOString().slice(0,10);
+  document.getElementById('plZnesek').value = '';
+  document.getElementById('plDo').value = '';
+}
+function prefillPlacilo(){
+  const c = clients.find(function(x){ return x.id === document.getElementById('plStranka').value; });
+  if(!c) return;
+  if(c.paket_id) document.getElementById('plZnesek').value = paketCena(c.paket_id) || '';
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1);
+  document.getElementById('plDo').value = d.toISOString().slice(0,10);
+}
+async function savePlacilo(){
+  const strankaId = document.getElementById('plStranka').value;
+  const znesek = document.getElementById('plZnesek').value;
+  if(!strankaId || !znesek){ toast('Izberi stranko in vpiši znesek.'); return; }
+  const btn = document.getElementById('plSaveBtn');
+  btn.disabled = true; btn.textContent = 'Shranjujem...';
+  try{
+    const c = clients.find(function(x){ return x.id === strankaId; });
+    const doDatum = document.getElementById('plDo').value || null;
+    const res = await fetch(SUPABASE_URL + '/rest/v1/placila', {
+      method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
+      body: JSON.stringify({
+        trener_id: session.user.id, stranka_id: strankaId, paket_id: (c && c.paket_id) || null,
+        znesek: parseFloat(znesek), datum: document.getElementById('plDatum').value || new Date().toISOString().slice(0,10),
+        obdobje_do: doDatum
+      })
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju plačila.');
+    placila.unshift((await res.json())[0]);
+    if(doDatum){
+      const r2 = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + strankaId, {
+        method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}),
+        body: JSON.stringify({ placano: true, placano_do: doDatum, opomnik_poslan: null })
+      });
+      if(r2.ok){
+        const upd = (await r2.json())[0];
+        const i = clients.findIndex(function(x){ return x.id === strankaId; });
+        if(i > -1) clients[i] = upd;
+      }
+    }
+    document.getElementById('placiloForm').classList.add('hidden');
+    renderNarocnineDashboard();
+    toast('Plačilo zabeleženo ✓');
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Shrani plačilo'; }
+}
+function prihodekPoMesecih(n){
+  const out = [];
+  const zdaj = new Date();
+  for(let i = n - 1; i >= 0; i--){
+    const d = new Date(zdaj.getFullYear(), zdaj.getMonth() - i, 1);
+    const kljuc = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const vsota = placila.filter(function(p){ return (p.datum || '').slice(0,7) === kljuc; })
+      .reduce(function(a,p){ return a + Number(p.znesek || 0); }, 0);
+    out.push({ label: SLO_MES_KRATKI[d.getMonth()], vsota: Math.round(vsota) });
+  }
+  return out;
+}
+function renderPrihodekChart(){
+  const wrap = document.getElementById('prihodekCard');
+  if(!wrap) return;
+  const meseci = prihodekPoMesecih(7);
+  const skupaj = meseci.reduce(function(a,m){ return a + m.vsota; }, 0);
+  if(skupaj === 0){
+    wrap.innerHTML = chartCardHead('Prihodek — 7 mesecev', 'Ko zabeležiš plačila, se tu izriše graf', '', 'blue')
+      + '<div class="empty" style="margin:0">Še ni zabeleženih plačil. Klikni "+ Zabeleži plačilo" zgoraj.</div>';
+    return;
+  }
+  const maxV = Math.max.apply(null, meseci.map(function(m){ return m.vsota; })) || 1;
+  const prvaPol = meseci.slice(0, Math.floor(meseci.length/2)).reduce(function(a,m){ return a + m.vsota; }, 0);
+  const drugaPol = meseci.slice(Math.floor(meseci.length/2)).reduce(function(a,m){ return a + m.vsota; }, 0);
+  const rast = prvaPol > 0 ? Math.round((drugaPol - prvaPol) / prvaPol * 100) : null;
+  const H = 110;
+  const bars = meseci.map(function(m, i){
+    const h = Math.max(3, (m.vsota / maxV) * H);
+    const zadnji = i >= meseci.length - 2;
+    return '<div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;height:100%">'
+      + '<div title="' + m.vsota + ' €" style="width:100%;border-radius:7px 7px 0 0;background:' + (zadnji ? 'var(--mint)' : 'var(--primary)') + ';height:' + h.toFixed(1) + 'px"></div>'
+      + '<div style="font-size:10px;color:var(--muted)">' + m.label + '</div></div>';
+  }).join('');
+  wrap.innerHTML = chartCardHead('Prihodek — 7 mesecev', 'skupaj ' + skupaj + ' €',
+      (rast === null ? '' : (rast >= 0 ? '+' : '') + rast + ' %'), rast >= 0 ? 'ok' : 'blue')
+    + '<div style="display:flex;align-items:flex-end;gap:9px;height:' + H + 'px">' + bars + '</div>';
+}
 function dniDo(datum){
   if(!datum) return null;
   return Math.round((new Date(datum + 'T00:00:00') - new Date(new Date().toISOString().slice(0,10) + 'T00:00:00')) / 86400000);
@@ -1422,11 +1547,24 @@ function renderNarocnineDashboard(){
   const meta = document.getElementById('narocnineMeta');
   if(meta) meta.textContent = aktivne.length + ' aktivnih naročnin · ' + zapadle.length + ' zapadlih plačil';
 
-  document.getElementById('narocnineKpis').innerHTML = '<div class="stat-strip" style="margin-bottom:16px">'
-    + '<div class="stat" style="min-width:130px"><b>' + prihodek + ' €</b><span>mesečni prihodek</span></div>'
-    + '<div class="stat" style="min-width:130px"><b>' + aktivne.length + '</b><span>aktivnih naročnin</span></div>'
-    + '<div class="stat" style="min-width:130px"><b' + (zapadle.length ? ' style="color:var(--danger)"' : '') + '>' + zapadle.length + '</b><span>' + (neplacano ? 'zapadlo · ' + neplacano + ' €' : 'zapadlih plačil') + '</span></div>'
-    + '<div class="stat" style="min-width:130px"><b>' + povprecje + ' €</b><span>povprečje na stranko</span></div>'
+  const zdaj = new Date();
+  const kljucTa = zdaj.getFullYear() + '-' + String(zdaj.getMonth()+1).padStart(2,'0');
+  const pm = new Date(zdaj.getFullYear(), zdaj.getMonth()-1, 1);
+  const kljucPrej = pm.getFullYear() + '-' + String(pm.getMonth()+1).padStart(2,'0');
+  const vsotaTa = placila.filter(function(p){ return (p.datum||'').slice(0,7) === kljucTa; }).reduce(function(a,p){ return a + Number(p.znesek||0); }, 0);
+  const vsotaPrej = placila.filter(function(p){ return (p.datum||'').slice(0,7) === kljucPrej; }).reduce(function(a,p){ return a + Number(p.znesek||0); }, 0);
+  const razlika = Math.round(vsotaTa - vsotaPrej);
+  const imenPrej = SLO_MES_KRATKI[pm.getMonth()];
+  const podnaslov = function(txt, ok){
+    return '<span style="display:block;font-size:10.5px;font-weight:600;margin-top:5px;color:' + (ok ? 'var(--mint-strong)' : 'var(--danger)') + '">' + txt + '</span>';
+  };
+  document.getElementById('narocnineKpis').innerHTML = '<div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:16px">'
+    + '<div class="stat" style="text-align:left"><b>' + prihodek + ' €</b><span>mesečni prihodek</span>'
+      + (vsotaPrej ? podnaslov((razlika >= 0 ? '+' : '') + razlika + ' € glede na ' + imenPrej, razlika >= 0) : '') + '</div>'
+    + '<div class="stat" style="text-align:left"><b>' + aktivne.length + '</b><span>aktivnih naročnin</span></div>'
+    + '<div class="stat" style="text-align:left"><b' + (zapadle.length ? ' style="color:var(--danger)"' : '') + '>' + zapadle.length + '</b><span>zapadla plačila</span>'
+      + (neplacano ? podnaslov(neplacano + ' € neplačano', false) : '') + '</div>'
+    + '<div class="stat" style="text-align:left"><b>' + povprecje + ' €</b><span>povprečje na stranko</span></div>'
     + '</div>';
 
   const opomniki = vrstice.filter(function(r){ return r.st.kljuc === 'zapadlo' || r.st.kljuc === 'kmalu'; });
@@ -1439,12 +1577,13 @@ function renderNarocnineDashboard(){
       + '<span class="badge-mid">' + opomniki.length + ' čaka</span></div>'
       + opomniki.map(function(r){
         return '<div class="prog-ex-row" style="align-items:center">'
-          + '<span><b>' + escapeHtml(r.c.ime) + '</b><br><span style="font-size:11.5px;color:var(--muted)">' + r.st.txt + ' · ' + escapeHtml(paketIme(r.c.paket_id)) + '</span></span>'
+          + '<span><b>' + escapeHtml(r.c.ime) + '</b><br><span style="font-size:11.5px;color:var(--muted)">' + r.st.txt + (r.c.opomnik_poslan ? ' · opomnik poslan ' + formatShortDate(r.c.opomnik_poslan) : ' · brez opomnika') + '</span></span>'
           + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="opomniStranko(\'' + r.c.id + '\')">' + (r.st.kljuc === 'zapadlo' ? 'Pošlji' : 'Najavi') + '</button>'
           + '</div>';
       }).join('');
   }
   renderNarocnineTable();
+  renderPrihodekChart();
 }
 function opomniStranko(id){
   const c = clients.find(function(x){ return x.id === id; });
@@ -1453,6 +1592,9 @@ function opomniStranko(id){
   const besedilo = st.kljuc === 'zapadlo'
     ? 'Živjo ' + c.ime.split(' ')[0] + ', tvoja naročnina (' + paketIme(c.paket_id) + ') je zapadla. Ko urediš plačilo, gremo naprej po načrtu 💪'
     : 'Živjo ' + c.ime.split(' ')[0] + ', tvoja naročnina (' + paketIme(c.paket_id) + ') poteče ' + (c.placano_do || 'kmalu') + '. Javi, če jo podaljšaš 🙂';
+  fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + id, {
+    method:'PATCH', headers: authHeaders(), body: JSON.stringify({ opomnik_poslan: new Date().toISOString().slice(0,10) })
+  }).then(function(){ c.opomnik_poslan = new Date().toISOString().slice(0,10); }).catch(function(){});
   openClientDetail(id);
   setTimeout(function(){
     openClientChatScreen();
@@ -1485,7 +1627,7 @@ function showNarocnine(){
   document.getElementById('screenNarocnine').classList.remove('hidden');
   document.getElementById('topTabs').classList.remove('hidden');
   setTopTab('narocnine');
-  loadPaketi().then(renderNarocnineDashboard);
+  Promise.all([loadPaketi(), loadPlacila()]).then(renderNarocnineDashboard);
 }
 function showObroki(){
   hideAllScreens();
@@ -4114,6 +4256,7 @@ function renderPaketi(){
     return;
   }
   wrap.innerHTML = paketi.map(function(p){
+    const stStrank = clients.filter(function(c){ return c.paket_id === p.id; }).length;
     const funkcijeHtml = (p.funkcije || '').split('\n').filter(function(f){ return f.trim(); }).map(function(f){
       return '<li style="font-size:13px;color:var(--muted);padding:3px 0 3px 20px;position:relative"><span style="position:absolute;left:0;color:var(--ok);font-weight:700">✓</span>' + escapeHtml(f.trim()) + '</li>';
     }).join('');
@@ -4122,8 +4265,9 @@ function renderPaketi(){
     return '<div class="program-card">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">'
       + '<h3 style="font-size:16px">' + escapeHtml(p.ime) + '</h3>'
-      + cenaHtml
+      + '<span class="badge-mid">' + stStrank + (stStrank === 1 ? ' stranka' : (stStrank === 2 ? ' stranki' : (stStrank === 3 || stStrank === 4 ? ' stranke' : ' strank'))) + '</span>'
       + '</div>'
+      + '<div style="margin-bottom:8px">' + cenaHtml + '</div>'
       + (p.opis ? '<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">' + escapeHtml(p.opis) + '</div>' : '')
       + (funkcijeHtml ? '<ul style="margin-bottom:10px">' + funkcijeHtml + '</ul>' : '')
       + '<div style="margin-bottom:10px">' + povezavaHtml + '</div>'
