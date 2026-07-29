@@ -219,6 +219,26 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
   #mealForm{position:sticky;top:16px;max-height:calc(100vh - 60px);overflow-y:auto}
 }
 .meal-card.on{border-color:var(--primary-ink);box-shadow:0 0 0 2px var(--primary-soft)}
+.prog-cols2{display:block}
+.prog-list-pane{margin-bottom:16px}
+.prog-tile{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid transparent;border-radius:12px;cursor:pointer;margin-bottom:4px}
+.prog-tile:hover{background:var(--primary-soft)}
+.prog-tile.on{background:var(--primary-soft);border-color:var(--primary-ink)}
+.prog-tile .ini{width:38px;height:38px;border-radius:50%;background:var(--primary-soft);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:12px;flex-shrink:0}
+.prog-tile .txt{flex:1;min-width:0}
+.prog-tile .txt b{display:block;font-size:13.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prog-tile .txt span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.day-pill{border:1px solid var(--line);background:var(--card);color:var(--muted);font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;padding:7px 0;border-radius:999px;cursor:pointer;text-align:center}
+.day-pill.on{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.ex-num{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ex-num b{font-size:14px;font-weight:600}
+.ex-num em{font-style:normal;font-size:12.5px;color:var(--muted)}
+@media (min-width:1024px){
+  .prog-cols2{display:grid;grid-template-columns:336px 1fr;gap:0;align-items:start}
+  .prog-list-pane{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--card);border-right:1px solid var(--line);padding:20px 16px;margin:-28px 0 -60px -32px}
+  .prog-detail-pane{padding-left:28px}
+  .prog-detail-cols{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;align-items:start}
+}
 .chat-conv-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-bottom:12px}
 .chat-conv-head .ini{width:42px;height:42px;border-radius:50%;background:var(--primary-soft);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;flex-shrink:0}
 .chat-date-sep{text-align:center;margin:14px 0 10px}
@@ -609,11 +629,20 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
     <!-- ===== EKRAN: SEZNAM PREDLOG PROGRAMOV ===== -->
     <div id="screenPrograms" class="hidden">
-      <div class="sec-head">
-        <h2>Programi</h2>
-        <button class="add-btn" onclick="openProgramBuilder()">+ Nov program</button>
+      <div class="prog-cols2">
+        <aside class="prog-list-pane">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <h2 style="font-family:'Archivo',sans-serif;font-weight:800;font-size:20px">Programi</h2>
+              <span id="progCount" style="font-size:13px;color:var(--muted)"></span>
+            </div>
+            <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="openProgramBuilder()">+ Nov</button>
+          </div>
+          <input type="text" id="progSearch" placeholder="Išči po imenu ali vaji…" oninput="renderProgramTemplates()" style="width:100%;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:10px;background:var(--card);color:var(--ink)">
+          <div id="programTemplateList"></div>
+        </aside>
+        <div class="prog-detail-pane" id="progDetailPane"></div>
       </div>
-      <div id="programTemplateList"></div>
     </div>
 
     <!-- ===== EKRAN: PREDOGLED PROGRAMA (kot ga vidi stranka) ===== -->
@@ -2115,7 +2144,10 @@ function showPrograms(){
   document.getElementById('screenPrograms').classList.remove('hidden');
   document.getElementById('topTabs').classList.remove('hidden');
   setTopTab('programs');
-  loadProgramTemplates();
+  loadProgramTemplates().then(function(){
+    if(currentProgramId) openProgramDetail(currentProgramId);
+    else if(programTemplates.length > 0) openProgramDetail(programTemplates[0].id);
+  });
 }
 
 // ---------- STRANKE ----------
@@ -2770,7 +2802,7 @@ async function loadProgramForEdit(id){
     document.getElementById('progOpis').value = p.opis || '';
     const sorted = (p.program_vaje || []).slice().sort(function(a,b){ return (a.vrstni_red||0) - (b.vrstni_red||0); });
     builderExercises = sorted.map(function(pv){
-      return { vaja_id: pv.vaja_id, ime: pv.vaje ? pv.vaje.ime : 'Vaja', serije: pv.serije, ponovitve: pv.ponovitve, priporocena_teza: pv.priporocena_teza, ogrevalne_serije: pv.ogrevalne_serije || '' };
+      return { vaja_id: pv.vaja_id, ime: pv.vaje ? pv.vaje.ime : 'Vaja', serije: pv.serije, ponovitve: pv.ponovitve, priporocena_teza: pv.priporocena_teza, pocitek_s: pv.pocitek_s, opomba: pv.opomba || '', ogrevalne_serije: pv.ogrevalne_serije || '' };
     });
     renderBuilderList();
     const assignedIds = (p.dodelitve_programov || []).map(function(d){ return d.stranka_id; });
@@ -2812,12 +2844,12 @@ function addExerciseToBuilder(vajaId){
   if(builderExercises.some(function(b){ return b.vaja_id === vajaId; })){ toast('Ta vaja je že v programu.'); return; }
   const v = vaje.find(function(x){ return x.id === vajaId; });
   if(!v) return;
-  builderExercises.push({ vaja_id: v.id, ime: v.ime, serije: 3, ponovitve: 10, priporocena_teza: null, ogrevalne_serije: '' });
+  builderExercises.push({ vaja_id: v.id, ime: v.ime, serije: 3, ponovitve: 10, priporocena_teza: null, pocitek_s: 90, opomba: '', ogrevalne_serije: '' });
   renderBuilderList();
 }
 function removeFromBuilder(idx){ builderExercises.splice(idx, 1); renderBuilderList(); }
 function updateBuilderField(idx, field, value){
-  if(field === 'ogrevalne_serije'){ builderExercises[idx][field] = value; return; }
+  if(field === 'ogrevalne_serije' || field === 'opomba'){ builderExercises[idx][field] = value; return; }
   builderExercises[idx][field] = value === '' ? null : parseFloat(value);
 }
 function renderBuilderList(){
@@ -2831,8 +2863,10 @@ function renderBuilderList(){
       + '<div class="bfield"><label>serije</label><input type="number" value="' + (b.serije||'') + '" onchange="updateBuilderField(' + idx + ',\'serije\',this.value)"></div>'
       + '<div class="bfield"><label>ponov.</label><input type="number" value="' + (b.ponovitve||'') + '" onchange="updateBuilderField(' + idx + ',\'ponovitve\',this.value)"></div>'
       + '<div class="bfield"><label>kg</label><input type="number" step="0.5" value="' + (b.priporocena_teza||'') + '" onchange="updateBuilderField(' + idx + ',\'priporocena_teza\',this.value)"></div>'
+      + '<div class="bfield"><label>počitek s</label><input type="number" value="' + (b.pocitek_s||'') + '" onchange="updateBuilderField(' + idx + ',\'pocitek_s\',this.value)"></div>'
       + '<button class="rm" onclick="removeFromBuilder(' + idx + ')">×</button>'
       + '<input type="text" style="width:100%;margin-top:6px" placeholder="Ogrevalne serije, npr. prazen drog × 10, 40 kg × 5 (neobvezno)" value="' + escapeHtml(b.ogrevalne_serije||'') + '" onchange="updateBuilderField(' + idx + ',\'ogrevalne_serije\',this.value)">'
+      + '<input type="text" style="width:100%;margin-top:6px" placeholder="Opomba pri vaji, npr. nadzorovan tempo 3-1-1 (neobvezno)" value="' + escapeHtml(b.opomba||'') + '" onchange="updateBuilderField(' + idx + ',\'opomba\',this.value)">'
       + '</div>';
   }).join('');
 }
@@ -2847,7 +2881,7 @@ async function saveProgramTemplate(){
     if(editingProgramId){
       const upRes = await fetch(SUPABASE_URL + '/rest/v1/programi?id=eq.' + editingProgramId, {
         method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}),
-        body: JSON.stringify({ ime: ime, opis: document.getElementById('progOpis').value.trim() || null })
+        body: JSON.stringify({ ime: ime, opis: document.getElementById('progOpis').value.trim() || null, spremenjeno: new Date().toISOString() })
       });
       if(!upRes.ok){ const e = await upRes.json().catch(function(){return{};}); throw new Error(e.message || 'Napaka pri posodabljanju programa.'); }
       progId = editingProgramId;
@@ -2863,7 +2897,7 @@ async function saveProgramTemplate(){
     }
 
     const rows = builderExercises.map(function(b, idx){
-      return { program_id: progId, vaja_id: b.vaja_id, serije: b.serije || 3, ponovitve: b.ponovitve || 10, priporocena_teza: b.priporocena_teza, ogrevalne_serije: b.ogrevalne_serije || null, vrstni_red: idx };
+      return { program_id: progId, vaja_id: b.vaja_id, serije: b.serije || 3, ponovitve: b.ponovitve || 10, priporocena_teza: b.priporocena_teza, pocitek_s: b.pocitek_s || null, opomba: b.opomba || null, ogrevalne_serije: b.ogrevalne_serije || null, vrstni_red: idx };
     });
     const pvRes = await fetch(SUPABASE_URL + '/rest/v1/program_vaje', {
       method:'POST', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(rows)
@@ -2891,34 +2925,192 @@ async function saveProgramTemplate(){
 // ---------- SEZNAM PREDLOG PROGRAMOV ----------
 async function loadProgramTemplates(){
   try{
-    const url = SUPABASE_URL + '/rest/v1/programi?select=id,ime,ustvarjen,program_vaje(id),dodelitve_programov(id,stranka_id)&order=ustvarjen.desc';
+    const url = SUPABASE_URL + '/rest/v1/programi?select=id,ime,opis,dnevi,spremenjeno,ustvarjen,program_vaje(id,serije,ponovitve,priporocena_teza,pocitek_s,opomba,ogrevalne_serije,vrstni_red,vaje(id,ime,video_url)),dodelitve_programov(id,stranka_id,dan)&order=ustvarjen.desc';
     const res = await fetch(url, { headers: authHeaders() });
     if(!res.ok) throw new Error('Napaka pri nalaganju programov.');
     programTemplates = await res.json();
-    renderProgramTemplates(programTemplates);
+    renderProgramTemplates();
   }catch(err){ toast(err.message); }
 }
-function renderProgramTemplates(list){
+let currentProgramId = null;
+const DNI7 = ['pon','tor','sre','čet','pet','sob','ned'];
+function progSerije(p){
+  return (p.program_vaje || []).reduce(function(a,v){ return a + (v.serije || 0); }, 0);
+}
+function progTrajanje(p){
+  const serije = progSerije(p);
+  const pocitki = (p.program_vaje || []).reduce(function(a,v){ return a + ((v.pocitek_s || 90) * (v.serije || 0)); }, 0);
+  return Math.round((serije * 45 + pocitki) / 60);
+}
+function filtriraniProgrami(){
+  const el = document.getElementById('progSearch');
+  const q = (el && el.value ? el.value : '').toLowerCase().trim();
+  if(!q) return programTemplates;
+  return programTemplates.filter(function(p){
+    const vaje = (p.program_vaje || []).map(function(v){ return v.vaje ? v.vaje.ime : ''; }).join(' ');
+    return ((p.ime || '') + ' ' + vaje).toLowerCase().indexOf(q) > -1;
+  });
+}
+function progTileHtml(p){
+  const ini = (p.ime || '?').split(/[\s—-]+/).filter(Boolean).map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+  const st = (p.dodelitve_programov || []).length;
+  const meta = vajaOblika((p.program_vaje || []).length) + ' · ' + progSerije(p) + ' serij'
+    + (st ? ' · dodeljen ' + st + (st === 1 ? ' stranki' : ' strankam') : '');
+  return '<div class="prog-tile' + (p.id === currentProgramId ? ' on' : '') + '" onclick="openProgramDetail(\'' + p.id + '\')">'
+    + '<div class="ini">' + escapeHtml(ini) + '</div>'
+    + '<div class="txt"><b>' + escapeHtml(p.ime) + '</b><span>' + meta + '</span></div></div>';
+}
+function renderProgramTemplates(){
   const wrap = document.getElementById('programTemplateList');
-  if(!list || list.length === 0){
-    wrap.innerHTML = '<div class="empty">Še nimaš ustvarjenega programa. Klikni "+ Nov program".</div>';
+  const cnt = document.getElementById('progCount');
+  if(cnt) cnt.textContent = programTemplates.length || '';
+  if(!programTemplates || programTemplates.length === 0){
+    wrap.innerHTML = '<div class="empty">Še nimaš ustvarjenega programa. Klikni "+ Nov".</div>';
+    document.getElementById('progDetailPane').innerHTML = '';
     return;
   }
-  wrap.innerHTML = list.map(function(p){
-    const exCount = (p.program_vaje || []).length;
-    const assignedIds = (p.dodelitve_programov || []).map(function(d){ return d.stranka_id; });
-    const names = assignedIds.map(function(id){ const c = clients.find(function(x){ return x.id === id; }); return c ? c.ime : null; }).filter(Boolean);
-    const namesHtml = names.length ? names.map(function(n){ return '<span class="assign-tag">' + escapeHtml(n) + '</span>'; }).join('') : '<span style="font-size:12px;color:var(--muted)">Ni dodeljen nobeni stranki</span>';
-    return '<div class="program-card"><h3>' + escapeHtml(p.ime) + '</h3>'
-      + '<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">' + vajaOblika(exCount) + '</div>'
-      + '<div style="margin-bottom:10px">' + namesHtml + '</div>'
-      + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openProgramBuilder(null,\'' + p.id + '\')">Uredi</button>'
-      + '<button class="btn-small" style="background:var(--accent-soft);color:#9A6512" onclick="previewProgram(\'' + p.id + '\')">Predogled</button>'
-      + '<button class="btn-small" onclick="deleteProgramTemplate(\'' + p.id + '\')">Izbriši</button>'
-      + '</div>'
+  const rows = filtriraniProgrami();
+  if(rows.length === 0){ wrap.innerHTML = '<div class="empty">Ni zadetkov.</div>'; return; }
+  const predloge = rows.filter(function(p){ return (p.dodelitve_programov || []).length > 0; });
+  const osnutki = rows.filter(function(p){ return (p.dodelitve_programov || []).length === 0; });
+  wrap.innerHTML =
+    (predloge.length ? '<div class="group-label">Predloge</div>' + predloge.map(progTileHtml).join('') : '')
+    + (osnutki.length ? '<div class="group-label">Osnutki</div>' + osnutki.map(progTileHtml).join('') : '');
+}
+async function setProgramDnevi(programId, dan){
+  const p = programTemplates.find(function(x){ return x.id === programId; });
+  if(!p) return;
+  const trenutni = (p.dnevi || '').split(',').filter(Boolean);
+  const i = trenutni.indexOf(dan);
+  if(i > -1) trenutni.splice(i, 1); else trenutni.push(dan);
+  const novi = trenutni.join(',');
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/programi?id=eq.' + programId, {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ dnevi: novi || null, spremenjeno: new Date().toISOString() })
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju razporeda.');
+    p.dnevi = novi;
+    openProgramDetail(programId);
+  }catch(err){ toast(err.message); }
+}
+async function duplicateProgram(id){
+  const p = programTemplates.find(function(x){ return x.id === id; });
+  if(!p) return;
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/programi', {
+      method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
+      body: JSON.stringify({ trener_id: session.user.id, ime: p.ime + ' (kopija)', opis: p.opis || null, dnevi: p.dnevi || null })
+    });
+    if(!res.ok) throw new Error('Napaka pri podvajanju.');
+    const nov = (await res.json())[0];
+    const vaje = (p.program_vaje || []).map(function(v){
+      return { program_id: nov.id, vaja_id: v.vaje ? v.vaje.id : null, serije: v.serije, ponovitve: v.ponovitve,
+               priporocena_teza: v.priporocena_teza, pocitek_s: v.pocitek_s, opomba: v.opomba,
+               ogrevalne_serije: v.ogrevalne_serije, vrstni_red: v.vrstni_red };
+    }).filter(function(v){ return v.vaja_id; });
+    if(vaje.length){
+      await fetch(SUPABASE_URL + '/rest/v1/program_vaje', { method:'POST', headers: authHeaders(), body: JSON.stringify(vaje) });
+    }
+    await loadProgramTemplates();
+    openProgramDetail(nov.id);
+    toast('Program podvojen ✓');
+  }catch(err){ toast(err.message); }
+}
+async function openProgramDetail(id){
+  currentProgramId = id;
+  renderProgramTemplates();
+  const p = programTemplates.find(function(x){ return x.id === id; });
+  const pane = document.getElementById('progDetailPane');
+  if(!p){ pane.innerHTML = ''; return; }
+
+  const sorted = (p.program_vaje || []).slice().sort(function(a,b){ return (a.vrstni_red||0) - (b.vrstni_red||0); });
+  const vajeHtml = sorted.map(function(v, i){
+    const naziv = v.vaje ? v.vaje.ime : 'Vaja';
+    const teza = v.priporocena_teza ? (v.priporocena_teza + ' kg') : 'po občutku';
+    const pocitek = v.pocitek_s ? (' · počitek ' + v.pocitek_s + ' s') : '';
+    return '<div class="ex-log-block">'
+      + '<div class="ex-num"><b>' + (i+1) + ' · ' + escapeHtml(naziv) + '</b>'
+      + '<em>' + (v.serije || 0) + ' serije × ' + (v.ponovitve || 0) + ' ponovitev · ' + teza + pocitek + '</em></div>'
+      + (v.opomba ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">Opomba: ' + escapeHtml(v.opomba) + '</div>' : '')
       + '</div>';
   }).join('');
+
+  const dnevi = (p.dnevi || '').split(',').filter(Boolean);
+  const dneviHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">'
+    + DNI7.map(function(d){
+        return '<button class="day-pill' + (dnevi.indexOf(d) > -1 ? ' on' : '') + '" onclick="setProgramDnevi(\'' + p.id + '\',\'' + d + '\')">' + d + '</button>';
+      }).join('') + '</div>';
+
+  const dodeljene = (p.dodelitve_programov || []).map(function(d){
+    return clients.find(function(c){ return c.id === d.stranka_id; });
+  }).filter(Boolean);
+  const dodeljeneHtml = dodeljene.length === 0
+    ? '<div class="empty" style="margin:0">Ni dodeljen nobeni stranki.</div>'
+    : dodeljene.map(function(c){
+        return '<div class="prog-ex-row" style="align-items:center">'
+          + '<span><b>' + escapeHtml(c.ime) + '</b><br><span style="font-size:11.5px;color:var(--muted)">' + (c.cilj ? escapeHtml(c.cilj) : 'brez cilja') + '</span></span>'
+          + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openClientDetail(\'' + c.id + '\')">Odpri</button>'
+          + '</div>';
+      }).join('');
+
+  const zadnja = p.spremenjeno ? formatShortDate(p.spremenjeno.slice(0,10)) : (p.ustvarjen ? formatShortDate(p.ustvarjen.slice(0,10)) : '—');
+  pane.innerHTML =
+    '<div class="danes-head">'
+    + '<div><h1>' + escapeHtml(p.ime) + '</h1><div class="meta">' + vajaOblika(sorted.length) + ' · ' + progSerije(p) + ' serij · pribl. ' + progTrajanje(p) + ' min · zadnja sprememba ' + zadnja + '</div></div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button class="btn btn-inline" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="duplicateProgram(\'' + p.id + '\')">Podvoji</button>'
+    + '<button class="btn btn-inline" onclick="openProgramBuilder(null,\'' + p.id + '\')">Uredi program</button>'
+    + '</div></div>'
+    + '<div class="prog-detail-cols">'
+    + '<div>'
+    +   '<div class="card">'
+    +     '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px">'
+    +       '<h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">Vaje</h3>'
+    +       '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openProgramBuilder(null,\'' + p.id + '\')">+ Dodaj vajo</button>'
+    +     '</div>'
+    +     (p.opis ? '<div class="note-box">' + escapeHtml(p.opis) + '</div>' : '')
+    +     (vajeHtml || '<div class="empty" style="margin:0">Ta program še nima vaj.</div>')
+    +   '</div>'
+    + '</div>'
+    + '<div>'
+    +   '<div class="card"><h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;margin-bottom:14px">Razpored v tednu</h3>' + dneviHtml + '</div>'
+    +   '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
+    +     '<h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">Dodeljene stranke</h3>'
+    +     '<span class="badge-mid">' + dodeljene.length + '</span></div>' + dodeljeneHtml + '</div>'
+    +   '<div class="card" id="progUspesnost"></div>'
+    + '</div>'
+    + '</div>';
+  loadProgramUspesnost(p.id);
+}
+async function loadProgramUspesnost(programId){
+  const wrap = document.getElementById('progUspesnost');
+  if(!wrap) return;
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/treningi?program_id=eq.' + programId + '&select=datum&order=datum.asc', { headers: authHeaders(), cache:'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    if(rows.length === 0){
+      wrap.innerHTML = chartCardHead('Uspešnost programa', 'še ni zabeleženih treningov', '', 'blue')
+        + '<div class="empty" style="margin:0">Ko stranke zaključijo trening po tem programu, se tu prikaže pregled.</div>';
+      return;
+    }
+    const tedni = {};
+    rows.forEach(function(t){
+      const d = new Date(t.datum + 'T00:00:00');
+      const teden = Math.floor((Date.now() - d.getTime()) / (7*86400000));
+      if(teden >= 0 && teden < 4) tedni[3 - teden] = (tedni[3 - teden] || 0) + 1;
+    });
+    const vals = [0,1,2,3].map(function(i){ return tedni[i] || 0; });
+    const maxV = Math.max.apply(null, vals) || 1;
+    const H = 96;
+    const bars = vals.map(function(v, i){
+      const h = Math.max(3, (v / maxV) * H);
+      return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;height:100%">'
+        + '<div title="' + v + '" style="width:100%;border-radius:7px 7px 0 0;background:' + (v >= maxV ? 'var(--mint)' : 'var(--primary)') + ';height:' + h.toFixed(1) + 'px"></div>'
+        + '<div style="font-size:10px;color:var(--muted)">' + (4-i) + '. t.</div></div>';
+    }).join('');
+    wrap.innerHTML = chartCardHead('Uspešnost programa', 'zadnje 4 tedne', rows.length + ' zaključkov', 'ok')
+      + '<div style="display:flex;align-items:flex-end;gap:9px;height:' + H + 'px">' + bars + '</div>';
+  }catch(e){ wrap.innerHTML = ''; }
 }
 async function deleteProgramTemplate(id){
   if(!confirm('Izbrišeš ta program? Odstranjen bo tudi pri vseh strankah, ki ga imajo dodeljenega.')) return;
@@ -2926,7 +3118,10 @@ async function deleteProgramTemplate(id){
     const res = await fetch(SUPABASE_URL + '/rest/v1/programi?id=eq.' + id, { method:'DELETE', headers: authHeaders() });
     if(!res.ok) throw new Error('Napaka pri brisanju programa.');
     toast('Program izbrisan.');
+    if(currentProgramId === id) currentProgramId = null;
     await loadProgramTemplates();
+    if(currentProgramId) openProgramDetail(currentProgramId);
+    else document.getElementById('progDetailPane').innerHTML = '';
   }catch(err){ toast(err.message); }
 }
 
