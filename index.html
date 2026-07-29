@@ -4060,8 +4060,6 @@ async function saveMeal(){
     }
     mealLibrary.sort(function(a,b){ return a.naziv.localeCompare(b.naziv); });
     resetMealForm();
-    document.getElementById('mealForm').classList.add('hidden');
-    renderMealLibrary();
   }catch(err){ toast(err.message); }
   finally{ btn.disabled = false; btn.textContent = editingMealId ? 'Shrani spremembe' : 'Shrani obrok'; }
 }
