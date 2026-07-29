@@ -197,6 +197,31 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .acc.open .acc-arrow{transform:rotate(90deg)}
 .acc-body{padding:2px 15px 13px}
 .day-sel{border:1px solid var(--line);border-radius:8px;padding:5px 7px;font-size:11.5px;font-family:'Inter',sans-serif;background:var(--card);color:var(--ink);flex-shrink:0}
+.chat-cols{display:block}
+.chat-list-pane{display:none}
+.chat-back{display:inline-flex}
+.conv-row{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;border:1px solid transparent;border-radius:12px;cursor:pointer;margin-bottom:4px}
+.conv-row:hover{background:var(--primary-soft)}
+.conv-row.on{background:var(--primary-soft);border-color:var(--primary-ink)}
+.conv-row .ini{width:38px;height:38px;border-radius:50%;background:var(--primary-soft);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:12px;flex-shrink:0}
+.conv-row .txt{flex:1;min-width:0}
+.conv-row .txt b{display:block;font-size:13.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conv-row .txt span{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.conv-row .meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.conv-row .meta i{font-style:normal;font-size:10.5px;color:var(--muted)}
+.conv-row .dot{width:9px;height:9px;border-radius:50%;background:var(--primary-ink)}
+.nav-badge{margin-left:auto;background:var(--primary);color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.chat-conv-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-bottom:12px}
+.chat-conv-head .ini{width:42px;height:42px;border-radius:50%;background:var(--primary-soft);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;flex-shrink:0}
+.chat-date-sep{text-align:center;margin:14px 0 10px}
+.chat-date-sep span{background:var(--primary-soft);color:var(--muted);font-size:11px;padding:4px 12px;border-radius:999px}
+.msg-time{display:block;font-size:10px;opacity:.65;margin-top:4px}
+@media (min-width:1024px){
+  .chat-cols{display:grid;grid-template-columns:336px 1fr;gap:0;align-items:start}
+  .chat-list-pane{display:block;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--card);border-right:1px solid var(--line);padding:20px 16px;margin:-28px 0 -60px -32px}
+  .chat-conv-pane{padding-left:28px}
+  .chat-back{display:none}
+}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .sec-head h2{font-size:16px;font-weight:700}
 .add-btn{border:0;background:var(--primary);color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
@@ -541,11 +566,19 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
     <!-- ===== EKRAN: KLEPET S STRANKO (ločeno okno) ===== -->
     <div id="screenClientChat" class="hidden">
-      <button class="back-btn" onclick="backFromClientChat()">← Nazaj na stranko</button>
-      <div class="client-header" style="margin-bottom:14px">
-        <h2 id="ccChatIme"></h2>
-      </div>
-      <div class="chat-box" style="height:calc(100vh - 230px)">
+      <div class="chat-cols">
+        <aside class="chat-list-pane">
+          <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:12px">
+            <h2 style="font-family:'Archivo',sans-serif;font-weight:800;font-size:20px">Klepet</h2>
+            <span id="chatUnreadTotal" style="font-size:12.5px;color:var(--muted)"></span>
+          </div>
+          <input type="text" id="chatSearch" placeholder="Išči pogovor…" oninput="renderChatList()" style="width:100%;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:10px;background:var(--card);color:var(--ink)">
+          <div id="chatList"></div>
+        </aside>
+        <div class="chat-conv-pane">
+      <button class="back-btn chat-back" onclick="backFromClientChat()">← Nazaj na stranko</button>
+      <div class="chat-conv-head" id="chatConvHead"></div>
+      <div class="chat-box" style="height:calc(100vh - 210px)">
         <div class="chat-msgs" id="chatMsgsTrener"></div>
         <div class="chat-rec-indicator hidden" id="recIndicatorTrener"><span class="dot"></span><span id="recTimeTrener">Snemam… 0:00</span></div>
         <div class="chat-input-row">
@@ -563,6 +596,8 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         </div>
       </div>
     </div>
+        </div>
+      </div>
 
     <!-- ===== EKRAN: SEZNAM PREDLOG PROGRAMOV ===== -->
     <div id="screenPrograms" class="hidden">
@@ -1357,6 +1392,7 @@ async function enterApp(){
   await loadMape();
   await loadMealLibrary();
   await loadPaketi();
+  loadConvSummaries();
   showClients();
 }
 
@@ -1640,10 +1676,7 @@ let trenerjevPrag = 14;
 let privzBeljMinGlobal = null;
 let privzBeljMaxGlobal = null;
 
-function openTrainerChat(){
-  if(!currentClientId){ toast('Najprej izberi stranko na seznamu.'); showClients(); return; }
-  openClientChatScreen();
-}
+function openTrainerChat(){ openClientChatScreen(); }
 function openSettingsMenu(){
   hideAllScreens();
   ['snStranke','snProgrami','snObroki','snNarocnine','snKlepetT'].forEach(function(id){
@@ -2171,12 +2204,122 @@ async function handleAddClient(e){
 }
 
 // ---------- PROFIL STRANKE ----------
+let convSummaries = [];
+async function loadConvSummaries(){
+  if(clients.length === 0) return;
+  const ids = clients.map(function(c){ return c.id; }).join(',');
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/sporocila?stranka_id=in.(' + ids + ')&select=stranka_id,besedilo,tip,posiljatelj,poslano,prebrano&order=poslano.desc', { headers: authHeaders(), cache:'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    const zadnje = {}, neprebrano = {};
+    rows.forEach(function(m){
+      if(!zadnje[m.stranka_id]) zadnje[m.stranka_id] = m;
+      if(m.posiljatelj === 'stranka' && !m.prebrano) neprebrano[m.stranka_id] = (neprebrano[m.stranka_id] || 0) + 1;
+    });
+    convSummaries = clients.map(function(c){
+      return { c: c, zadnje: zadnje[c.id] || null, neprebrano: neprebrano[c.id] || 0 };
+    }).sort(function(a,b){
+      const ta = a.zadnje ? new Date(a.zadnje.poslano).getTime() : 0;
+      const tb = b.zadnje ? new Date(b.zadnje.poslano).getTime() : 0;
+      return tb - ta;
+    });
+  }catch(e){ convSummaries = clients.map(function(c){ return { c:c, zadnje:null, neprebrano:0 }; }); }
+  updateChatBadge();
+}
+function updateChatBadge(){
+  const skupaj = convSummaries.reduce(function(a,x){ return a + x.neprebrano; }, 0);
+  const el = document.getElementById('chatUnreadTotal');
+  if(el) el.textContent = skupaj ? (skupaj + ' neprebranih') : '';
+  ['snKlepetT','bnKlepetT'].forEach(function(id){
+    const b = document.getElementById(id);
+    if(!b) return;
+    let badge = b.querySelector('.nav-badge');
+    if(skupaj === 0){ if(badge) badge.remove(); return; }
+    if(!badge){
+      badge = document.createElement('span');
+      badge.className = 'nav-badge';
+      b.appendChild(badge);
+    }
+    badge.textContent = skupaj;
+  });
+}
+function povzetekSporocila(m){
+  if(!m) return 'Ni sporočil';
+  const pred = m.posiljatelj === 'trener' ? 'Ti: ' : '';
+  if(m.tip === 'slika') return pred + '📷 Slika';
+  if(m.tip === 'dokument') return pred + '📎 Dokument';
+  if(m.tip === 'glas') return pred + '🎤 Glasovno sporočilo';
+  return pred + (m.besedilo || '');
+}
+function relativniCas(iso){
+  if(!iso) return '';
+  const d = new Date(iso), zdaj = new Date();
+  const danes = zdaj.toISOString().slice(0,10);
+  if(iso.slice(0,10) === danes) return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  const razlika = Math.round((new Date(danes) - new Date(iso.slice(0,10))) / 86400000);
+  if(razlika < 7) return ['ned','pon','tor','sre','čet','pet','sob'][d.getDay()];
+  return formatShortDate(iso.slice(0,10));
+}
+function renderChatList(){
+  const wrap = document.getElementById('chatList');
+  if(!wrap) return;
+  const q = (document.getElementById('chatSearch').value || '').toLowerCase().trim();
+  const rows = convSummaries.filter(function(x){ return !q || x.c.ime.toLowerCase().indexOf(q) > -1; });
+  if(rows.length === 0){ wrap.innerHTML = '<div class="empty">Ni pogovorov.</div>'; return; }
+  wrap.innerHTML = rows.map(function(x){
+    const ini = x.c.ime.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+    return '<div class="conv-row' + (x.c.id === currentClientId ? ' on' : '') + '" onclick="openConversation(\'' + x.c.id + '\')">'
+      + '<div class="ini">' + escapeHtml(ini) + '</div>'
+      + '<div class="txt"><b>' + escapeHtml(x.c.ime) + '</b><span>' + escapeHtml(povzetekSporocila(x.zadnje)) + '</span></div>'
+      + '<div class="meta"><i>' + (x.zadnje ? relativniCas(x.zadnje.poslano) : '') + '</i>'
+      + (x.neprebrano ? '<span class="dot"></span>' : '') + '</div>'
+      + '</div>';
+  }).join('');
+}
+async function markConversationRead(clientId){
+  const x = convSummaries.find(function(y){ return y.c.id === clientId; });
+  if(!x || x.neprebrano === 0) return;
+  try{
+    await fetch(SUPABASE_URL + '/rest/v1/sporocila?stranka_id=eq.' + clientId + '&posiljatelj=eq.stranka&prebrano=is.false', {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ prebrano: true })
+    });
+    x.neprebrano = 0;
+    updateChatBadge();
+    renderChatList();
+  }catch(e){}
+}
+function renderConvHead(c){
+  const head = document.getElementById('chatConvHead');
+  if(!head) return;
+  if(!c){ head.innerHTML = ''; return; }
+  const ini = c.ime.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+  head.innerHTML = '<div class="ini">' + escapeHtml(ini) + '</div>'
+    + '<div style="flex:1;min-width:0"><div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:15px">' + escapeHtml(c.ime) + '</div>'
+    + '<div style="font-size:11.5px;color:var(--muted)">' + (c.cilj ? escapeHtml(c.cilj) : 'brez cilja') + '</div></div>'
+    + '<div style="display:flex;gap:8px;flex-shrink:0">'
+    + '<button class="btn btn-inline" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openClientDetail(\'' + c.id + '\')">Odpri profil</button>'
+    + '</div>';
+}
+function openConversation(clientId){
+  currentClientId = clientId;
+  const c = clients.find(function(x){ return x.id === clientId; });
+  renderConvHead(c);
+  renderChatList();
+  chatLastCount = -1;
+  startChatPolling(clientId);
+  markConversationRead(clientId);
+}
 function openClientChatScreen(){
-  const c = clients.find(function(x){ return x.id === currentClientId; });
   hideAllScreens();
   document.getElementById('screenClientChat').classList.remove('hidden');
-  document.getElementById('ccChatIme').textContent = c ? ('Klepet · ' + c.ime) : 'Klepet';
-  startChatPolling(currentClientId);
+  document.getElementById('topTabs').classList.add('hidden');
+  const snK = document.getElementById('snKlepetT'); if(snK) snK.classList.add('on');
+  loadConvSummaries().then(function(){
+    renderChatList();
+    if(currentClientId) openConversation(currentClientId);
+    else if(convSummaries.length > 0) openConversation(convSummaries[0].c.id);
+    else renderConvHead(null);
+  });
 }
 function backFromClientChat(){
   openClientDetail(currentClientId);
@@ -3151,7 +3294,7 @@ async function sendChatMessageStranka(){
   try{
     const res = await fetch(SUPABASE_URL + '/rest/v1/sporocila', {
       method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
-      body: JSON.stringify({ trener_id: clientProfile.trener_id, stranka_id: clientProfile.id, posiljatelj: 'stranka', besedilo: text, tip: 'besedilo' })
+      body: JSON.stringify({ trener_id: clientProfile.trener_id, stranka_id: clientProfile.id, posiljatelj: 'stranka', prebrano: false, besedilo: text, tip: 'besedilo' })
     });
     if(!res.ok) throw new Error('Napaka pri pošiljanju.');
     loadClientChatMessages(true);
@@ -3936,6 +4079,7 @@ async function loadChatMessagesTrener(clientId, forceScroll){
     const msgs = await res.json();
     if(!forceScroll && msgs.length === chatLastCount) return;
     renderChatMessages('chatMsgsTrener', msgs, 'trener', true);
+    if(chatLastCount !== -1 && msgs.length > chatLastCount){ loadConvSummaries().then(renderChatList); }
     chatLastCount = msgs.length;
   }catch(err){ /* tiho, da ne moti pollinga */ }
 }
@@ -3960,7 +4104,19 @@ function renderChatMessages(wrapId, msgs, myRole, doScroll){
     wrap.innerHTML = '<div class="chat-empty">Še ni sporočil. Napiši prvo spodaj.</div>';
     return;
   }
+  let zadnjiDan = '';
   wrap.innerHTML = msgs.map(function(m){
+    let sep = '';
+    const dan = (m.poslano || '').slice(0,10);
+    if(dan && dan !== zadnjiDan){
+      zadnjiDan = dan;
+      const danes = new Date().toISOString().slice(0,10);
+      const DNEVI = ['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'];
+      const dd = new Date(m.poslano);
+      const oznaka = (dan === danes) ? ('danes, ' + dd.getDate() + '. ' + ['januar','februar','marec','april','maj','junij','julij','avgust','september','oktober','november','december'][dd.getMonth()])
+        : (DNEVI[dd.getDay()] + ', ' + dd.getDate() + '. ' + ['januar','februar','marec','april','maj','junij','julij','avgust','september','oktober','november','december'][dd.getMonth()]);
+      sep = '<div class="chat-date-sep"><span>' + oznaka + '</span></div>';
+    }
     const mine = m.posiljatelj === myRole;
     const t = new Date(m.poslano);
     const tStr = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
@@ -3977,7 +4133,7 @@ function renderChatMessages(wrapId, msgs, myRole, doScroll){
     } else {
       body = escapeHtml(m.besedilo || '');
     }
-    return '<div class="chat-msg ' + (mine?'me':'them') + '">' + body + '<span class="t">' + tStr + '</span></div>';
+    return sep + '<div class="chat-msg ' + (mine?'me':'them') + '">' + body + '<span class="t">' + tStr + '</span></div>';
   }).join('');
   wrap.querySelectorAll('audio').forEach(fixAudioDuration);
   if(doScroll) wrap.scrollTop = wrap.scrollHeight;
@@ -4161,7 +4317,7 @@ async function sendChatMessageTrener(){
   try{
     const res = await fetch(SUPABASE_URL + '/rest/v1/sporocila', {
       method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
-      body: JSON.stringify({ trener_id: session.user.id, stranka_id: currentClientId, posiljatelj: 'trener', besedilo: text, tip: 'besedilo' })
+      body: JSON.stringify({ trener_id: session.user.id, stranka_id: currentClientId, posiljatelj: 'trener', prebrano: true, besedilo: text, tip: 'besedilo' })
     });
     if(!res.ok) throw new Error('Napaka pri pošiljanju.');
     loadChatMessagesTrener(currentClientId, true);
