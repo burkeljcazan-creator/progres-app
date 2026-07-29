@@ -211,10 +211,14 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .conv-row .meta i{font-style:normal;font-size:10.5px;color:var(--muted)}
 .conv-row .dot{width:9px;height:9px;border-radius:50%;background:var(--primary-ink)}
 .nav-badge{margin-left:auto;background:var(--primary);color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.obroki-cols{display:block}
 @media (min-width:1024px){
-  #mealList{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .obroki-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:start}
+  #mealList{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   #mealList .meal-card{margin-bottom:0}
+  #mealForm{position:sticky;top:16px;max-height:calc(100vh - 60px);overflow-y:auto}
 }
+.meal-card.on{border-color:var(--primary-ink);box-shadow:0 0 0 2px var(--primary-soft)}
 .chat-conv-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-bottom:12px}
 .chat-conv-head .ini{width:42px;height:42px;border-radius:50%;background:var(--primary-soft);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;flex-shrink:0}
 .chat-date-sep{text-align:center;margin:14px 0 10px}
@@ -663,7 +667,6 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
     <div id="screenObroki" class="hidden">
       <div class="danes-head">
         <div><h1>Obroki</h1><div class="meta" id="obrokiMeta"></div></div>
-        <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleMealForm()">+ Nov obrok</button>
       </div>
 
       <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -685,7 +688,13 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         <button class="tab" onclick="setMealFilter('brez_laktoze',this)">Brez laktoze</button>
       </div>
 
-      <div class="card hidden" id="mealForm">
+      <div class="obroki-cols">
+      <div id="mealList"></div>
+      <div class="card" id="mealForm">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px">
+          <h3 id="mealFormTitle" style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Nov obrok</h3>
+          <button class="btn-small hidden" id="mealCancelBtn" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="resetMealForm()">Prekliči</button>
+        </div>
         <div class="field"><label>Kategorija</label>
           <select id="mKategorija" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)">
             <option value="">— brez kategorije —</option>
@@ -729,10 +738,11 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           <input type="text" id="mAlergeni" placeholder="Izbrani alergeni se izpišejo tukaj, lahko dopišeš svoje ločene z vejico" style="margin-top:8px">
         </div>
         <button class="btn" id="saveMealB" onclick="saveMeal()">Shrani obrok</button>
-        <a href="#" id="cancelMealEdit" class="hidden" onclick="event.preventDefault(); resetMealForm();" style="font-size:12px;color:var(--muted);display:inline-block;margin-top:8px">Prekliči urejanje</a>
+        <button class="btn hidden" id="mealDeleteBtn" style="background:var(--danger-soft);color:var(--danger);margin-top:8px" onclick="deleteMeal(editingMealId)">Izbriši obrok</button>
+        <a href="#" id="cancelMealEdit" class="hidden" onclick="event.preventDefault(); resetMealForm();" style="display:none"></a>
       </div>
 
-      <div id="mealList"></div>
+      </div>
     </div>
 
     <nav class="bottom-nav trainer-nav" id="trainerBottomNav">
@@ -3872,7 +3882,6 @@ let cropDragging = false, cropDragStartX=0, cropDragStartY=0, cropBoxStartX=0, c
 
 function toggleMealForm(){
   resetMealForm();
-  document.getElementById('mealForm').classList.toggle('hidden');
   renderAlergenChips();
 }
 function resetMealForm(){
@@ -3883,6 +3892,10 @@ function resetMealForm(){
   document.getElementById('mealImagePreview').innerHTML = 'Ni slike';
   document.getElementById('mealCropWrap').classList.add('hidden');
   document.getElementById('saveMealB').textContent = 'Shrani obrok';
+  const t = document.getElementById('mealFormTitle'); if(t) t.textContent = 'Nov obrok';
+  const cb = document.getElementById('mealCancelBtn'); if(cb) cb.classList.add('hidden');
+  const db = document.getElementById('mealDeleteBtn'); if(db) db.classList.add('hidden');
+  renderMealLibrary();
   document.getElementById('cancelMealEdit').classList.add('hidden');
   renderAlergenChips();
 }
@@ -3987,10 +4000,12 @@ function editMeal(id){
   document.getElementById('mealImagePreview').innerHTML = mealImageData ? ('<img src="' + mealImageData + '" style="width:100%;height:100%;object-fit:cover">') : 'Ni slike';
   document.getElementById('mealCropWrap').classList.add('hidden');
   document.getElementById('saveMealB').textContent = 'Shrani spremembe';
-  document.getElementById('cancelMealEdit').classList.remove('hidden');
-  document.getElementById('mealForm').classList.remove('hidden');
+  document.getElementById('mealFormTitle').textContent = 'Uredi obrok';
+  document.getElementById('mealCancelBtn').classList.remove('hidden');
+  document.getElementById('mealDeleteBtn').classList.remove('hidden');
   renderAlergenChips();
-  document.getElementById('mIme').scrollIntoView({behavior:'smooth', block:'center'});
+  renderMealLibrary();
+  if(window.innerWidth < 1024) document.getElementById('mIme').scrollIntoView({behavior:'smooth', block:'center'});
 }
 function renderAlergenChips(){
   const wrap = document.getElementById('alergenChips');
@@ -4056,7 +4071,7 @@ async function deleteMeal(id){
     const res = await fetch(SUPABASE_URL + '/rest/v1/obroki?id=eq.' + id, { method:'DELETE', headers: authHeaders() });
     if(!res.ok) throw new Error('Napaka pri brisanju obroka.');
     mealLibrary = mealLibrary.filter(function(x){ return x.id !== id; });
-    renderMealLibrary();
+    if(editingMealId === id) resetMealForm(); else renderMealLibrary();
     toast('Obrok izbrisan.');
   }catch(err){ toast(err.message); }
 }
@@ -4099,28 +4114,21 @@ function renderMealLibrary(){
   const rows = filtriraniObroki();
   if(rows.length === 0){ wrap.innerHTML = '<div class="empty">Ni zadetkov za ta filter.</div>'; return; }
   wrap.innerHTML = rows.map(function(m){
-    const makros = [
-      m.kcal ? m.kcal+' kcal' : null,
-      m.beljakovine ? m.beljakovine+' g B' : null,
-      m.ogljikovi_hidrati ? m.ogljikovi_hidrati+' g OH' : null,
-      m.mascobe ? m.mascobe+' g M' : null
-    ].filter(Boolean).join(' · ');
     const slika = m.slika_url
       ? ('<img src="' + m.slika_url + '" style="width:100%;height:100%;object-fit:cover;display:block">')
       : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10.5px;text-align:center;padding:6px">Ni slike</div>';
-    return '<div class="meal-card">'
+    const makros = [
+      m.kcal ? m.kcal + ' kcal' : null,
+      m.beljakovine ? m.beljakovine + ' g beljakovin' : null
+    ].filter(Boolean).join(' · ');
+    return '<div class="meal-card' + (editingMealId === m.id ? ' on' : '') + '" style="cursor:pointer" onclick="editMeal(\'' + m.id + '\')">'
       + '<div class="meal-card-img">' + slika + '</div>'
-      + '<div class="meal-card-body">'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
-      + '<h3 style="font-size:17px">' + escapeHtml(m.naziv) + (m.kategorija ? ' <span class="badge-mid" style="vertical-align:middle">' + KAT_IMENA[m.kategorija] + '</span>' : '') + '</h3>'
-      + '<div style="display:flex;gap:6px;flex-shrink:0">'
-      + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="editMeal(\'' + m.id + '\')">Uredi</button>'
-      + '<button class="btn-small" onclick="deleteMeal(\'' + m.id + '\')">Izbriši</button>'
+      + '<div class="meal-card-body" style="padding:12px 14px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+      + '<h3 style="font-size:14.5px;line-height:1.3">' + escapeHtml(m.naziv) + '</h3>'
+      + (m.kategorija ? '<span class="badge-mid" style="flex-shrink:0">' + KAT_IMENA[m.kategorija] + '</span>' : '')
       + '</div>'
-      + '</div>'
-      + (makros ? '<div style="font-size:12.5px;color:var(--muted);margin-top:4px">' + makros + '</div>' : '')
-      + (m.recept ? '<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5">' + escapeHtml(m.recept) + '</div>' : '')
-      + (m.alergeni ? '<div style="margin-top:10px">' + m.alergeni.split(',').map(function(a){ return '<span class="assign-tag" style="background:var(--danger-soft);color:var(--danger)">' + escapeHtml(a.trim()) + '</span>'; }).join('') + '</div>' : '')
+      + (makros ? '<div style="font-size:12px;color:var(--muted);margin-top:5px">' + makros + '</div>' : '')
       + '</div>'
       + '</div>';
   }).join('');
