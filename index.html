@@ -211,6 +211,10 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .conv-row .meta i{font-style:normal;font-size:10.5px;color:var(--muted)}
 .conv-row .dot{width:9px;height:9px;border-radius:50%;background:var(--primary-ink)}
 .nav-badge{margin-left:auto;background:var(--primary);color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+@media (min-width:1024px){
+  #mealList{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  #mealList .meal-card{margin-bottom:0}
+}
 .chat-conv-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-bottom:12px}
 .chat-conv-head .ini{width:42px;height:42px;border-radius:50%;background:var(--primary-soft);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;flex-shrink:0}
 .chat-date-sep{text-align:center;margin:14px 0 10px}
@@ -657,12 +661,40 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 
     <!-- ===== EKRAN: KNJIŽNICA OBROKOV ===== -->
     <div id="screenObroki" class="hidden">
-      <div class="sec-head">
-        <h2>Obroki</h2>
-        <button class="add-btn" onclick="toggleMealForm()">+ Nov obrok</button>
+      <div class="danes-head">
+        <div><h1>Obroki</h1><div class="meta" id="obrokiMeta"></div></div>
+        <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleMealForm()">+ Nov obrok</button>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <input type="text" id="mealSearch" placeholder="Išči po imenu ali sestavini…" oninput="renderMealLibrary()" style="flex:1;min-width:200px;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--ink)">
+        <select id="mealSort" onchange="renderMealLibrary()" style="border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;background:var(--card);color:var(--ink)">
+          <option value="novo">Razvrsti: najnovejši</option>
+          <option value="belj">Največ beljakovin</option>
+          <option value="kcal">Najmanj kalorij</option>
+          <option value="ime">Po imenu</option>
+        </select>
+      </div>
+
+      <div class="tabs" id="mealFilters" style="margin-bottom:14px;flex-wrap:wrap">
+        <button class="tab on" onclick="setMealFilter('vsi',this)">Vsi</button>
+        <button class="tab" onclick="setMealFilter('zajtrk',this)">Zajtrk</button>
+        <button class="tab" onclick="setMealFilter('kosilo',this)">Kosilo</button>
+        <button class="tab" onclick="setMealFilter('vecerja',this)">Večerja</button>
+        <button class="tab" onclick="setMealFilter('prigrizek',this)">Prigrizek</button>
+        <button class="tab" onclick="setMealFilter('brez_laktoze',this)">Brez laktoze</button>
       </div>
 
       <div class="card hidden" id="mealForm">
+        <div class="field"><label>Kategorija</label>
+          <select id="mKategorija" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)">
+            <option value="">— brez kategorije —</option>
+            <option value="zajtrk">Zajtrk</option>
+            <option value="kosilo">Kosilo</option>
+            <option value="vecerja">Večerja</option>
+            <option value="prigrizek">Prigrizek</option>
+          </select>
+        </div>
         <div class="field"><label>Ime obroka *</label><input type="text" id="mIme" placeholder="npr. Piščanec, riž in solata"></div>
         <div class="field">
           <label>Slika obroka (neobvezno)</label>
@@ -3847,7 +3879,7 @@ function resetMealForm(){
   editingMealId = null;
   mealImageData = null;
   mealOriginalImage = null;
-  ['mIme','mOpis','mKcal','mBeljakovine','mOgljikovi','mMascobe','mAlergeni'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['mIme','mOpis','mKcal','mBeljakovine','mOgljikovi','mMascobe','mAlergeni','mKategorija'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('mealImagePreview').innerHTML = 'Ni slike';
   document.getElementById('mealCropWrap').classList.add('hidden');
   document.getElementById('saveMealB').textContent = 'Shrani obrok';
@@ -3951,6 +3983,7 @@ function editMeal(id){
   document.getElementById('mOgljikovi').value = m.ogljikovi_hidrati || '';
   document.getElementById('mMascobe').value = m.mascobe || '';
   document.getElementById('mAlergeni').value = m.alergeni || '';
+  document.getElementById('mKategorija').value = m.kategorija || '';
   document.getElementById('mealImagePreview').innerHTML = mealImageData ? ('<img src="' + mealImageData + '" style="width:100%;height:100%;object-fit:cover">') : 'Ni slike';
   document.getElementById('mealCropWrap').classList.add('hidden');
   document.getElementById('saveMealB').textContent = 'Shrani spremembe';
@@ -3989,6 +4022,7 @@ async function saveMeal(){
       ogljikovi_hidrati: document.getElementById('mOgljikovi').value ? parseFloat(document.getElementById('mOgljikovi').value) : null,
       mascobe: document.getElementById('mMascobe').value ? parseFloat(document.getElementById('mMascobe').value) : null,
       alergeni: document.getElementById('mAlergeni').value.trim() || null,
+      kategorija: document.getElementById('mKategorija').value || null,
       slika_url: mealImageData
     };
     if(editingMealId){
@@ -4026,13 +4060,45 @@ async function deleteMeal(id){
     toast('Obrok izbrisan.');
   }catch(err){ toast(err.message); }
 }
+let mealFilter = 'vsi';
+const KAT_IMENA = { zajtrk:'Zajtrk', kosilo:'Kosilo', vecerja:'Večerja', prigrizek:'Prigrizek' };
+function setMealFilter(f, btn){
+  mealFilter = f;
+  document.querySelectorAll('#mealFilters .tab').forEach(function(t){ t.classList.remove('on'); });
+  if(btn) btn.classList.add('on');
+  renderMealLibrary();
+}
+function filtriraniObroki(){
+  const qEl = document.getElementById('mealSearch');
+  const q = (qEl && qEl.value ? qEl.value : '').toLowerCase().trim();
+  let rows = mealLibrary.slice();
+  if(mealFilter === 'brez_laktoze'){
+    rows = rows.filter(function(m){ return (m.alergeni || '').toLowerCase().indexOf('laktoz') === -1; });
+  } else if(mealFilter !== 'vsi'){
+    rows = rows.filter(function(m){ return m.kategorija === mealFilter; });
+  }
+  if(q) rows = rows.filter(function(m){ return ((m.naziv || '') + ' ' + (m.recept || '')).toLowerCase().indexOf(q) > -1; });
+  const sEl = document.getElementById('mealSort');
+  const sort = sEl ? sEl.value : 'novo';
+  if(sort === 'belj') rows.sort(function(a,b){ return (b.beljakovine||0) - (a.beljakovine||0); });
+  else if(sort === 'kcal') rows.sort(function(a,b){ return (a.kcal||1e9) - (b.kcal||1e9); });
+  else if(sort === 'ime') rows.sort(function(a,b){ return (a.naziv||'').localeCompare(b.naziv||'', 'sl'); });
+  return rows;
+}
 function renderMealLibrary(){
   const wrap = document.getElementById('mealList');
+  const meta = document.getElementById('obrokiMeta');
+  if(meta){
+    const sSliko = mealLibrary.filter(function(m){ return m.slika_url; }).length;
+    meta.textContent = mealLibrary.length + ' obrokov v knjižnici · ' + sSliko + ' s sliko';
+  }
   if(mealLibrary.length === 0){
     wrap.innerHTML = '<div class="empty">Še nimaš dodanega obroka. Klikni "+ Nov obrok".</div>';
     return;
   }
-  wrap.innerHTML = mealLibrary.map(function(m){
+  const rows = filtriraniObroki();
+  if(rows.length === 0){ wrap.innerHTML = '<div class="empty">Ni zadetkov za ta filter.</div>'; return; }
+  wrap.innerHTML = rows.map(function(m){
     const makros = [
       m.kcal ? m.kcal+' kcal' : null,
       m.beljakovine ? m.beljakovine+' g B' : null,
@@ -4046,7 +4112,7 @@ function renderMealLibrary(){
       + '<div class="meal-card-img">' + slika + '</div>'
       + '<div class="meal-card-body">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
-      + '<h3 style="font-size:17px">' + escapeHtml(m.naziv) + '</h3>'
+      + '<h3 style="font-size:17px">' + escapeHtml(m.naziv) + (m.kategorija ? ' <span class="badge-mid" style="vertical-align:middle">' + KAT_IMENA[m.kategorija] + '</span>' : '') + '</h3>'
       + '<div style="display:flex;gap:6px;flex-shrink:0">'
       + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="editMeal(\'' + m.id + '\')">Uredi</button>'
       + '<button class="btn-small" onclick="deleteMeal(\'' + m.id + '\')">Izbriši</button>'
