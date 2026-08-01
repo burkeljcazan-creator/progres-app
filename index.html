@@ -197,6 +197,8 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .acc.open .acc-arrow{transform:rotate(90deg)}
 .acc-body{padding:2px 15px 13px}
 .day-sel{border:1px solid var(--line);border-radius:8px;padding:5px 7px;font-size:11.5px;font-family:'Inter',sans-serif;background:var(--card);color:var(--ink);flex-shrink:0}
+.date-chip{display:inline-flex;align-items:center;gap:6px;background:var(--primary-soft);color:var(--primary-ink);font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:999px}
+.date-chip button{border:0;background:transparent;color:var(--primary-ink);font-size:14px;line-height:1;cursor:pointer;padding:0}
 .chat-cols{display:block}
 .chat-list-pane{display:none}
 .chat-back{display:inline-flex}
@@ -3038,6 +3040,7 @@ async function loadAssignedPrograms(clientId){
     const dod = await res1.json();
     assignedDanMap = {};
     dod.forEach(function(d){ assignedDanMap[d.program_id] = d.dan || ''; });
+    await loadClientPlanDates(clientId);
     if(dod.length === 0){ renderAssignedPrograms([]); return; }
     const ids = dod.map(function(d){ return d.program_id; }).join(',');
     const url2 = SUPABASE_URL + '/rest/v1/programi?id=in.(' + ids + ')&select=id,ime,opis,program_vaje(serije,ponovitve,priporocena_teza,ogrevalne_serije,vrstni_red,vaje(ime,opis,video_url))';
@@ -3112,18 +3115,47 @@ async function loadTrainingLog(clientId){
   }catch(err){ wrap.innerHTML = '<div class="empty">Napaka pri nalaganju.</div>'; }
 }
 let assignedDanMap = {};
+let clientPlanDates = {};
 const DNI_KRATKI = ['pon','tor','sre','čet','pet','sob','ned'];
-async function setProgramDay(programId, dan){
+async function loadClientPlanDates(clientId){
+  clientPlanDates = {};
   try{
-    const res = await fetch(SUPABASE_URL + '/rest/v1/dodelitve_programov?program_id=eq.' + programId + '&stranka_id=eq.' + currentClientId, {
-      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ dan: dan || null })
+    const danes = new Date().toISOString().slice(0,10);
+    const res = await fetch(SUPABASE_URL + '/rest/v1/koledar_treningi?stranka_id=eq.' + clientId + '&datum=gte.' + danes + '&select=id,program_id,datum&order=datum.asc', { headers: authHeaders(), cache:'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    rows.forEach(function(r){
+      if(!clientPlanDates[r.program_id]) clientPlanDates[r.program_id] = [];
+      clientPlanDates[r.program_id].push(r);
     });
-    if(!res.ok) throw new Error('Napaka pri shranjevanju dneva.');
-    assignedDanMap[programId] = dan || '';
-    toast('Dan shranjen ✓');
+  }catch(e){}
+}
+async function addProgramDate(programId, datum){
+  if(!datum) return;
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/koledar_treningi', {
+      method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
+      body: JSON.stringify({ trener_id: session.user.id, stranka_id: currentClientId, program_id: programId, datum: datum })
+    });
+    if(!res.ok) throw new Error('Napaka pri dodajanju datuma.');
+    const nov = (await res.json())[0];
+    if(!clientPlanDates[programId]) clientPlanDates[programId] = [];
+    clientPlanDates[programId].push(nov);
+    clientPlanDates[programId].sort(function(a,b){ return a.datum.localeCompare(b.datum); });
+    renderAssignedPrograms(assignedProgramsCache);
+    toast('Termin dodan v koledar ✓');
   }catch(err){ toast(err.message); }
 }
+async function removeProgramDate(id, programId){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/koledar_treningi?id=eq.' + id, { method:'DELETE', headers: authHeaders() });
+    if(!res.ok) throw new Error('Napaka pri brisanju.');
+    clientPlanDates[programId] = (clientPlanDates[programId] || []).filter(function(r){ return r.id !== id; });
+    renderAssignedPrograms(assignedProgramsCache);
+  }catch(err){ toast(err.message); }
+}
+let assignedProgramsCache = [];
 function renderAssignedPrograms(programi){
+  assignedProgramsCache = programi || [];
   const wrap = document.getElementById('programList');
   if(!programi || programi.length === 0){
     wrap.innerHTML = '<div class="empty">Tej stranki še ni dodeljen noben program.</div>';
@@ -3131,16 +3163,26 @@ function renderAssignedPrograms(programi){
   }
   wrap.innerHTML = programi.map(function(p, i){
     const n = (p.program_vaje || []).length;
+    const termini = clientPlanDates[p.id] || [];
+    const terminiHtml = termini.length === 0
+      ? '<span style="font-size:11.5px;color:var(--muted)">Ni načrtovanih datumov.</span>'
+      : termini.map(function(t){
+          return '<span class="date-chip">' + formatShortDate(t.datum)
+            + '<button onclick="removeProgramDate(\'' + t.id + '\',\'' + p.id + '\')" title="Odstrani">×</button></span>';
+        }).join('');
     return '<div class="acc" id="accprog_' + i + '">'
       + '<button class="acc-head" onclick="toggleAcc(\'accprog_' + i + '\')">'
-      + '<span style="min-width:0"><b>' + escapeHtml(p.ime) + '</b><em>' + vajaOblika(n) + (p.opis ? ' · ima opombo trenerja' : '') + '</em></span>'
-      + '<span style="display:flex;align-items:center;gap:9px;flex-shrink:0">'
-      + '<select class="day-sel" onclick="event.stopPropagation()" onchange="setProgramDay(\'' + p.id + '\', this.value)">'
-      + '<option value="">— dan —</option>'
-      + DNI_KRATKI.map(function(d){ return '<option value="' + d + '"' + (assignedDanMap[p.id] === d ? ' selected' : '') + '>' + d + '</option>'; }).join('')
-      + '</select>'
-      + '<span class="acc-arrow">›</span></span></button>'
-      + '<div class="acc-body hidden">' + renderProgramCardBodyHtml(p) + '</div>'
+      + '<span style="min-width:0"><b>' + escapeHtml(p.ime) + '</b><em>' + vajaOblika(n)
+      + (termini.length ? ' · ' + termini.length + ' načrtovanih' : '') + (p.opis ? ' · ima opombo trenerja' : '') + '</em></span>'
+      + '<span class="acc-arrow">›</span></button>'
+      + '<div class="acc-body hidden">'
+      +   '<div style="border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:11px 13px;margin-bottom:12px">'
+      +     '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:8px">Načrtovani datumi treninga</div>'
+      +     '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">' + terminiHtml + '</div>'
+      +     '<input type="date" class="day-sel" style="padding:8px 10px" onchange="addProgramDate(\'' + p.id + '\', this.value); this.value=\'\';">'
+      +   '</div>'
+      +   renderProgramCardBodyHtml(p)
+      + '</div>'
       + '</div>';
   }).join('');
 }
