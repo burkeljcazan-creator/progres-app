@@ -466,7 +466,16 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
             <div class="field"><label>Ime stranke (neobvezno)</label><input type="text" id="viIme" placeholder="npr. Maja Kovač"></div>
             <div class="field"><label>Paket (neobvezno)</label><select id="viPaket" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)"></select></div>
           </div>
-          <div class="field"><label>Za koliko mesecev (neobvezno)</label><input type="number" id="viMeseci" placeholder="npr. 3" min="1" max="36"></div>
+          <div class="grid2">
+            <div class="field"><label>Za koliko mesecev</label><input type="number" id="viMeseci" placeholder="npr. 3" min="1" max="36"></div>
+            <div class="field"><label>Način plačila</label>
+              <select id="viNacin" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)">
+                <option value="gotovina">Gotovina / dogovor — takojšen dostop</option>
+                <option value="app">Prek aplikacije — plača ob prijavi</option>
+              </select>
+            </div>
+          </div>
+          <p style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Pri gotovini stranka dobi dostop takoj (paket in meseci veljajo od prijave). Pri plačilu prek aplikacije mora po vprašalniku izbrati in plačati paket.</p>
           <button class="btn" id="viBtn" onclick="createInvite()">Ustvari povezavo</button>
           <div id="viResult" style="margin-top:12px"></div>
         </div>
@@ -637,6 +646,12 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
               </select>
             </div>
             <div class="field"><label>Plačano do (datum)</label><input type="date" id="ecPlacanoDo"></div>
+          <div class="field"><label>Način plačila</label>
+            <select id="ecNacin" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)">
+              <option value="gotovina">Gotovina / dogovor — dostop brez omejitve</option>
+              <option value="app">Prek aplikacije — dostop šele po plačilu</option>
+            </select>
+          </div>
         </div>
         <div class="grid2">
           <div class="field"><label>Podaljšaj za št. mesecev</label>
@@ -1151,6 +1166,24 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
   </div>
 </div>
 
+<div id="clientPaywallScreen" class="hidden">
+  <div class="navbar">
+    <div class="brand" id="paywallBrand">Progres<span>.</span></div>
+    <div class="who"><button onclick="handleLogout()">Odjava</button></div>
+  </div>
+  <div class="wrap" style="max-width:760px">
+    <div class="client-header">
+      <h2>Izberi svoj paket</h2>
+      <div class="meta">Za dostop do treningov in prehrane izberi paket in ga plačaj. Po plačilu ti trener odobri dostop.</div>
+    </div>
+    <div id="paywallList"></div>
+    <div class="card" style="margin-top:16px">
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.6">Če si se s trenerjem dogovoril za plačilo z gotovino, mu piši — dostop ti odklene ročno.</div>
+      <button class="btn" style="background:var(--primary-soft);color:var(--primary-ink);margin-top:12px" onclick="refreshPaywall()">Sem plačal — preveri znova</button>
+    </div>
+  </div>
+</div>
+
 <div id="clientOnboardingScreen" class="hidden">
   <div class="navbar">
     <div class="brand">Progres<span>.</span></div>
@@ -1478,14 +1511,16 @@ async function unovciVabilo(ime){
     if(v.velja_do && v.velja_do < new Date().toISOString().slice(0,10)){
       toast('Povezava je potekla. Prosi trenerja za novo.'); vabiloKoda = null; return;
     }
+    const nacin = v.nacin_placila || 'gotovina';
     const payload = {
       trener_id: v.trener_id, user_id: session.user.id,
       ime: ime || v.ime || 'Nova stranka',
       email: (session.user && session.user.email) || null,
       paket_id: v.paket_id || null,
+      nacin_placila: nacin,
       vprasalnik_izpolnjen: false
     };
-    if(v.paket_id && v.meseci){
+    if(nacin === 'gotovina' && v.paket_id && v.meseci){
       const d = new Date(); d.setMonth(d.getMonth() + v.meseci);
       payload.placano_do = d.toISOString().slice(0,10);
       payload.placano = true;
@@ -1625,6 +1660,10 @@ async function enterApp(){
       clientProfile = rows[0];
       if(!clientProfile.vprasalnik_izpolnjen){
         showOnboardingQuestionnaire();
+        return;
+      }
+      if(!imaDostop(clientProfile)){
+        await showPaywall();
         return;
       }
       document.getElementById('clientAppScreen').classList.remove('hidden');
@@ -2584,13 +2623,14 @@ function renderClientsTable(){
   const body = '<tbody>' + rows.map(function(c){
     const sprem = (c.zacetna_teza && c.trenutna_teza) ? (Math.round((c.trenutna_teza - c.zacetna_teza)*10)/10) : null;
     const spremTxt = sprem === null ? '—' : ((sprem > 0 ? '+' : '') + sprem + ' kg');
+    const nacinTxt = (c.nacin_placila === 'app') ? '<div class="dim" style="font-size:10px;margin-top:2px">prek aplikacije</div>' : '';
     const placilo = c.placano
       ? '<span class="badge-ok">Plačano</span>' + (c.placano_do ? '<div class="dim" style="font-size:10.5px;margin-top:2px">do ' + c.placano_do + '</div>' : '')
       : '<span class="badge-bad">Ni plačano</span>';
     return '<tr onclick="openClientFromTable(\'' + c.id + '\')">'
       + '<td><b>' + escapeHtml(c.ime) + '</b></td>'
       + '<td>' + escapeHtml(paketIme(c.paket_id)) + '</td>'
-      + '<td>' + placilo + '</td>'
+      + '<td>' + placilo + nacinTxt + '</td>'
       + '<td class="num">' + (c.zacetna_teza || '—') + '</td>'
       + '<td class="num">' + (c.trenutna_teza || '—') + '</td>'
       + '<td class="num">' + (c.ciljna_teza || '—') + '</td>'
@@ -2953,6 +2993,7 @@ async function createInvite(){
         ime: document.getElementById('viIme').value.trim() || null,
         paket_id: document.getElementById('viPaket').value || null,
         meseci: meseci ? parseInt(meseci) : null,
+        nacin_placila: document.getElementById('viNacin').value,
         velja_do: veljaDo.toISOString().slice(0,10)
       })
     });
@@ -4418,6 +4459,68 @@ function renderClientProgress(meritve){
   });
   listWrap.innerHTML = '<div class="card" style="margin-bottom:0"><div style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:10px">Vsi vnosi</div>' + clampRows(vrsticeM, 'merC', 5) + '</div>';
 }
+function imaDostop(c){
+  if(!c) return false;
+  if((c.nacin_placila || 'gotovina') !== 'app') return true;
+  if(!c.placano) return false;
+  if(c.placano_do && c.placano_do < new Date().toISOString().slice(0,10)) return false;
+  return true;
+}
+async function showPaywall(){
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('clientAppScreen').classList.add('hidden');
+  document.getElementById('clientOnboardingScreen').classList.add('hidden');
+  document.getElementById('clientPaywallScreen').classList.remove('hidden');
+  try{
+    const tRes = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + clientProfile.trener_id + '&select=brand_ime,brand_barva', { headers: authHeaders() });
+    const t = tRes.ok ? (await tRes.json())[0] : null;
+    if(t){
+      if(t.brand_ime) document.getElementById('paywallBrand').innerHTML = escapeHtml(t.brand_ime) + '<span>.</span>';
+      if(t.brand_barva) applyBrandColor(t.brand_barva);
+    }
+  }catch(e){}
+  const wrap = document.getElementById('paywallList');
+  wrap.innerHTML = '<div class="empty">Nalagam pakete…</div>';
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/paketi?trener_id=eq.' + clientProfile.trener_id + '&select=*&order=vrstni_red.asc', { headers: authHeaders(), cache:'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    if(rows.length === 0){
+      wrap.innerHTML = '<div class="empty">Trener še ni objavil paketov. Piši mu, da ti uredi dostop.</div>';
+      return;
+    }
+    wrap.innerHTML = rows.map(function(p){
+      const izbran = clientProfile.paket_id === p.id;
+      const funkcije = (p.funkcije || '').split('\n').filter(function(f){ return f.trim(); }).map(function(f){
+        return '<li style="font-size:13px;color:var(--muted);padding:3px 0 3px 20px;position:relative"><span style="position:absolute;left:0;color:var(--mint-strong);font-weight:700">✓</span>' + escapeHtml(f.trim()) + '</li>';
+      }).join('');
+      const btn = p.placilna_povezava
+        ? '<button class="btn" onclick="window.open(\'' + escapeHtml(p.placilna_povezava) + '\',\'_blank\')">Plačaj in aktiviraj</button>'
+        : '<button class="btn" disabled style="opacity:.5;cursor:default">Trener še ni omogočil plačila</button>';
+      return '<div class="program-card"' + (izbran ? ' style="border-color:var(--primary-ink)"' : '') + '>'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">'
+        + '<h3 style="font-size:16px">' + escapeHtml(p.ime) + (izbran ? ' <span class="badge-mid">priporočil trener</span>' : '') + '</h3>'
+        + (p.cena ? '<span style="font-family:\'Archivo\',sans-serif;font-weight:800;font-size:19px;color:var(--primary-ink)">' + p.cena + ' €</span>' : '')
+        + '</div>'
+        + (p.opis ? '<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">' + escapeHtml(p.opis) + '</div>' : '')
+        + (funkcije ? '<ul style="margin-bottom:12px">' + funkcije + '</ul>' : '')
+        + btn + '</div>';
+    }).join('');
+  }catch(err){ wrap.innerHTML = '<div class="empty">Napaka pri nalaganju paketov.</div>'; }
+}
+async function refreshPaywall(){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?user_id=eq.' + session.user.id + '&select=*', { headers: authHeaders(), cache:'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    if(rows.length === 0) return;
+    clientProfile = rows[0];
+    if(imaDostop(clientProfile)){
+      document.getElementById('clientPaywallScreen').classList.add('hidden');
+      await enterApp();
+    } else {
+      toast('Plačilo še ni zabeleženo. Če si plačal z gotovino, počakaj, da trener potrdi.');
+    }
+  }catch(e){ toast('Napaka pri preverjanju.'); }
+}
 async function loadClientPaketi(){
   const wrap = document.getElementById('clientPaketList');
   if(!clientProfile){ return; }
@@ -4764,6 +4867,7 @@ function toggleEditClient(){
   document.getElementById('ecOpombe').value = c.opombe || '';
   document.getElementById('ecPlacano').checked = !!c.placano;
   document.getElementById('ecPlacanoDo').value = c.placano_do || '';
+  document.getElementById('ecNacin').value = c.nacin_placila || 'gotovina';
   const sel = document.getElementById('ecPaket');
   sel.innerHTML = '<option value="">— brez paketa —</option>' + paketi.map(function(p){
     return '<option value="' + p.id + '"' + (c.paket_id === p.id ? ' selected' : '') + '>' + escapeHtml(p.ime) + (p.cena ? ' (' + p.cena + ' €)' : '') + '</option>';
@@ -4789,7 +4893,8 @@ async function saveClientEdits(){
       opombe: document.getElementById('ecOpombe').value.trim() || null,
       paket_id: document.getElementById('ecPaket').value || null,
       placano: document.getElementById('ecPlacano').checked,
-      placano_do: document.getElementById('ecPlacanoDo').value || null
+      placano_do: document.getElementById('ecPlacanoDo').value || null,
+      nacin_placila: document.getElementById('ecNacin').value
     };
     const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + currentClientId, {
       method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
