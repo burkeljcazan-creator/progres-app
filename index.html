@@ -667,10 +667,8 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
               <option value="visoka">Visoka (fizično delo ali trening 5+ ×)</option>
             </select>
           </div>
-          <div class="field"><label>Alergije (ločene z vejico)</label><input type="text" id="ecAlergije" placeholder="npr. gluten, laktoza"></div>
-          <div class="field"><label>Poškodbe / omejitve pri gibanju</label><input type="text" id="ecPoskodbe" placeholder="npr. bolečina v ramenu, operirano koleno"></div>
-          <div class="field"><label>Zdravstvena stanja, pomembna za trening</label><input type="text" id="ecBolezni" placeholder="npr. sladkorna bolezen, astma, visok krvni tlak"></div>
-          <div class="field"><label>Druge opombe</label><input type="text" id="ecOpombe" placeholder="karkoli, kar je vredno vedeti"></div>
+          <div class="field"><label>Druge opombe (vidi samo trener)</label><input type="text" id="ecOpombe" placeholder="karkoli, kar je vredno vedeti"></div>
+          <p style="font-size:11.5px;color:var(--muted);margin-bottom:14px">Alergije, poškodbe in zdravstvena stanja vnaša stranka sama v svojem vprašalniku — ti jih vidiš zgoraj med telesnimi podatki.</p>
           <button class="btn" id="ecSaveBtn" onclick="saveClientEdits()">Shrani spremembe</button>
         </div>
   
@@ -1230,6 +1228,8 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         </div>
       </div>
       <div class="field"><label>Alergije ali intolerance (neobvezno)</label><input type="text" id="obAlergije" placeholder="npr. laktoza, oreščki — pusti prazno, če jih ni"></div>
+      <div class="field"><label>Poškodbe ali omejitve pri gibanju (neobvezno)</label><input type="text" id="obPoskodbe" placeholder="npr. bolečina v ramenu, operirano koleno"></div>
+      <div class="field"><label>Zdravstvena stanja, pomembna za trening (neobvezno)</label><input type="text" id="obBolezni" placeholder="npr. sladkorna bolezen, astma, visok krvni tlak"></div>
       <div class="grid2">
         <div class="field"><label>Koliko obrokov na dan želiš?</label><input type="number" id="obObroki" placeholder="npr. 4"></div>
         <div class="field"><label>Tekočine — cilj (l/dan)</label><input type="number" step="0.1" id="obTekocine" placeholder="npr. 2.5"></div>
@@ -1626,6 +1626,8 @@ function showOnboardingQuestionnaire(){
   if(c.spol) document.getElementById('obSpol').value = c.spol;
   if(c.aktivnost) document.getElementById('obAktivnost').value = c.aktivnost;
   if(c.alergije) document.getElementById('obAlergije').value = c.alergije;
+  if(c.poskodbe) document.getElementById('obPoskodbe').value = c.poskodbe;
+  if(c.bolezni) document.getElementById('obBolezni').value = c.bolezni;
 }
 async function saveOnboarding(){
   const btn = document.getElementById('obSaveBtn');
@@ -1640,6 +1642,8 @@ async function saveOnboarding(){
       spol: document.getElementById('obSpol').value || null,
       aktivnost: document.getElementById('obAktivnost').value || null,
       alergije: document.getElementById('obAlergije').value.trim() || null,
+      poskodbe: document.getElementById('obPoskodbe').value.trim() || null,
+      bolezni: document.getElementById('obBolezni').value.trim() || null,
       stevilo_obrokov: document.getElementById('obObroki').value ? parseInt(document.getElementById('obObroki').value) : null,
       tekocine_l: document.getElementById('obTekocine').value ? parseFloat(document.getElementById('obTekocine').value) : null,
       vprasalnik_izpolnjen: true
@@ -4877,9 +4881,6 @@ function toggleEditClient(){
   document.getElementById('ecStarost').value = c.starost || '';
   document.getElementById('ecVisina').value = c.visina || '';
   document.getElementById('ecAktivnost').value = c.aktivnost || '';
-  document.getElementById('ecAlergije').value = c.alergije || '';
-  document.getElementById('ecPoskodbe').value = c.poskodbe || '';
-  document.getElementById('ecBolezni').value = c.bolezni || '';
   document.getElementById('ecOpombe').value = c.opombe || '';
   document.getElementById('editClientForm').classList.toggle('hidden');
 }
@@ -4949,9 +4950,6 @@ async function saveClientEdits(){
       starost: document.getElementById('ecStarost').value ? parseInt(document.getElementById('ecStarost').value) : null,
       visina: document.getElementById('ecVisina').value ? parseFloat(document.getElementById('ecVisina').value) : null,
       aktivnost: document.getElementById('ecAktivnost').value || null,
-      alergije: document.getElementById('ecAlergije').value.trim() || null,
-      poskodbe: document.getElementById('ecPoskodbe').value.trim() || null,
-      bolezni: document.getElementById('ecBolezni').value.trim() || null,
       opombe: document.getElementById('ecOpombe').value.trim() || null
     };
     const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + currentClientId, {
