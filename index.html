@@ -383,6 +383,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 <div id="authScreen">
   <div class="auth-card">
     <div class="auth-brand"><b>Progres<span>.</span></b><p>Prijava za trenerje in stranke</p></div>
+    <div id="inviteBanner" class="hidden" style="background:var(--primary-soft);color:var(--primary-ink);border-radius:var(--r-sm,10px);padding:11px 14px;font-size:12.5px;line-height:1.5;margin-bottom:14px"></div>
     <div class="tabs">
       <button class="on" id="tabLogin" onclick="switchTab('login')">Prijava</button>
       <button id="tabSignup" onclick="switchTab('signup')">Registracija</button>
@@ -455,6 +456,18 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       </div>
 
       <div class="card hidden" id="addForm">
+        <div style="border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:13px 15px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Povabi stranko s povezavo</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Stranka odpre povezavo, si sama ustvari prijavo in se samodejno poveže s tabo. Nato izpolni uvodni vprašalnik.</p>
+          <div class="grid2">
+            <div class="field"><label>Ime stranke (neobvezno)</label><input type="text" id="viIme" placeholder="npr. Maja Kovač"></div>
+            <div class="field"><label>Paket (neobvezno)</label><select id="viPaket" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)"></select></div>
+          </div>
+          <div class="field"><label>Za koliko mesecev (neobvezno)</label><input type="number" id="viMeseci" placeholder="npr. 3" min="1" max="36"></div>
+          <button class="btn" id="viBtn" onclick="createInvite()">Ustvari povezavo</button>
+          <div id="viResult" style="margin-top:12px"></div>
+        </div>
+        <div class="group-label" style="padding:0 0 8px">Ali ročno brez prijave</div>
         <form onsubmit="handleAddClient(event)">
           <div class="field"><label>Ime stranke *</label><input type="text" id="cIme" required></div>
           <div class="field"><label>E-pošta stranke</label><input type="email" id="cEmail"></div>
@@ -621,6 +634,14 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
               </select>
             </div>
             <div class="field"><label>Plačano do (datum)</label><input type="date" id="ecPlacanoDo"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Podaljšaj za št. mesecev</label>
+            <div style="display:flex;gap:8px">
+              <input type="number" id="ecMeseci" min="1" max="36" placeholder="npr. 3" style="flex:1">
+              <button type="button" class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink);white-space:nowrap" onclick="podaljsajPaket()">Izračunaj</button>
+            </div>
+          </div>
           </div>
           <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
             <input type="checkbox" id="ecPlacano" style="width:19px;height:19px;accent-color:var(--primary-ink)"> Naročnina je plačana
@@ -1432,6 +1453,52 @@ function authHeaders(extra){
 }
 
 // ---------- AUTH ----------
+let vabiloKoda = null;
+let vabiloPodatki = null;
+async function preveriVabilo(){
+  const params = new URLSearchParams(window.location.search);
+  const koda = params.get('vabilo');
+  if(!koda) return;
+  vabiloKoda = koda.toUpperCase();
+  const banner = document.getElementById('inviteBanner');
+  banner.classList.remove('hidden');
+  banner.innerHTML = 'Povabljen si v Progres. <b>Ustvari si prijavo</b> spodaj — račun se samodejno poveže s tvojim trenerjem.';
+  document.getElementById('suIme').focus();
+  switchTab('signup');
+}
+async function unovciVabilo(ime){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/vabila?koda=eq.' + vabiloKoda + '&uporabljeno=eq.false&select=*', { headers: authHeaders(), cache:'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    const v = rows[0];
+    if(!v){ toast('Povezava je neveljavna ali že uporabljena. Obrni se na trenerja.'); vabiloKoda = null; return; }
+    if(v.velja_do && v.velja_do < new Date().toISOString().slice(0,10)){
+      toast('Povezava je potekla. Prosi trenerja za novo.'); vabiloKoda = null; return;
+    }
+    const payload = {
+      trener_id: v.trener_id, user_id: session.user.id,
+      ime: ime || v.ime || 'Nova stranka',
+      email: (session.user && session.user.email) || null,
+      paket_id: v.paket_id || null,
+      vprasalnik_izpolnjen: false
+    };
+    if(v.paket_id && v.meseci){
+      const d = new Date(); d.setMonth(d.getMonth() + v.meseci);
+      payload.placano_do = d.toISOString().slice(0,10);
+      payload.placano = true;
+    }
+    const cRes = await fetch(SUPABASE_URL + '/rest/v1/stranke', {
+      method:'POST', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
+    });
+    if(!cRes.ok) throw new Error('Napaka pri povezovanju s trenerjem.');
+    const nova = (await cRes.json())[0];
+    await fetch(SUPABASE_URL + '/rest/v1/vabila?id=eq.' + v.id, {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ uporabljeno: true, stranka_id: nova.id })
+    });
+    vabiloKoda = null;
+    history.replaceState({}, '', window.location.pathname);
+  }catch(err){ toast(err.message); }
+}
 function switchTab(tab){
   document.getElementById('tabLogin').classList.toggle('on', tab==='login');
   document.getElementById('tabSignup').classList.toggle('on', tab==='signup');
@@ -1478,6 +1545,7 @@ async function handleSignup(e){
     if(!res.ok) throw new Error(data.msg || data.error_description || 'Napaka pri registraciji.');
     if(data.access_token){
       session = { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user };
+      if(vabiloKoda){ await unovciVabilo(ime); }
       await enterApp();
     } else {
       showAuthMsg('Račun je ustvarjen. Če se prijava ne zgodi sama, v Supabase pod Authentication izklopi "Confirm email".', 'warn');
@@ -2815,7 +2883,69 @@ async function renderClients(){
     if(document.getElementById('clientsWorkspace').classList.contains('split')) renderClientListOnly();
   }catch(e){}
 }
-function toggleAddForm(){ document.getElementById('addForm').classList.toggle('hidden'); }
+function toggleAddForm(){
+  const f = document.getElementById('addForm');
+  f.classList.toggle('hidden');
+  if(f.classList.contains('hidden')) return;
+  const sel = document.getElementById('viPaket');
+  if(sel) sel.innerHTML = '<option value="">— brez paketa —</option>' + paketi.map(function(p){
+    return '<option value="' + p.id + '">' + escapeHtml(p.ime) + (p.cena ? ' (' + p.cena + ' €)' : '') + '</option>';
+  }).join('');
+  document.getElementById('viResult').innerHTML = '';
+}
+function generirajKodo(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let k = '';
+  for(let i=0;i<8;i++){ k += chars[Math.floor(Math.random()*chars.length)]; }
+  return k;
+}
+async function createInvite(){
+  const btn = document.getElementById('viBtn');
+  btn.disabled = true; btn.textContent = 'Ustvarjam...';
+  try{
+    const koda = generirajKodo();
+    const meseci = document.getElementById('viMeseci').value;
+    const veljaDo = new Date();
+    veljaDo.setDate(veljaDo.getDate() + 30);
+    const res = await fetch(SUPABASE_URL + '/rest/v1/vabila', {
+      method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
+      body: JSON.stringify({
+        koda: koda, trener_id: session.user.id,
+        ime: document.getElementById('viIme').value.trim() || null,
+        paket_id: document.getElementById('viPaket').value || null,
+        meseci: meseci ? parseInt(meseci) : null,
+        velja_do: veljaDo.toISOString().slice(0,10)
+      })
+    });
+    if(!res.ok) throw new Error('Napaka pri ustvarjanju povezave.');
+    const povezava = window.location.origin + window.location.pathname + '?vabilo=' + koda;
+    document.getElementById('viResult').innerHTML =
+      '<div style="background:var(--ok-soft);border-radius:var(--r-sm,10px);padding:12px 14px">'
+      + '<div style="font-size:12.5px;font-weight:600;color:var(--mint-strong);margin-bottom:8px">Povezava pripravljena ✓ Velja 30 dni, uporabi se lahko enkrat.</div>'
+      + '<input type="text" readonly value="' + povezava + '" id="viLink" onclick="this.select()" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12px;background:var(--card);color:var(--ink);margin-bottom:8px">'
+      + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="kopirajPovezavo()">Kopiraj povezavo</button>'
+      + '</div>';
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Ustvari povezavo'; }
+}
+function kopirajPovezavo(){
+  const el = document.getElementById('viLink');
+  el.select();
+  navigator.clipboard.writeText(el.value).then(function(){ toast('Povezava kopirana ✓'); })
+    .catch(function(){ toast('Označi in kopiraj ročno.'); });
+}
+function podaljsajPaket(){
+  const n = parseInt(document.getElementById('ecMeseci').value);
+  if(!n || n < 1){ toast('Vpiši število mesecev.'); return; }
+  const izhod = document.getElementById('ecPlacanoDo').value;
+  const d = izhod ? new Date(izhod + 'T00:00:00') : new Date();
+  const danes = new Date(); danes.setHours(0,0,0,0);
+  if(d < danes) d.setTime(danes.getTime());
+  d.setMonth(d.getMonth() + n);
+  document.getElementById('ecPlacanoDo').value = d.toISOString().slice(0,10);
+  document.getElementById('ecPlacano').checked = true;
+  toast('Plačano do ' + d.toISOString().slice(0,10) + ' — shrani spremembe.');
+}
 async function handleAddClient(e){
   e.preventDefault();
   const btn = document.getElementById('addClientBtn');
@@ -5902,6 +6032,7 @@ function toast(msg){
   toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3200);
 }
 applyStoredTheme();
+preveriVabilo();
 </script>
 </body>
 </html>
