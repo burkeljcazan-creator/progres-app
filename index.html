@@ -1129,6 +1129,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
                 <button class="tab on" onclick="setNarocnineFilter('vse',this)">Vse</button>
                 <button class="tab" onclick="setNarocnineFilter('zapadlo',this)">Zapadlo</button>
                 <button class="tab" onclick="setNarocnineFilter('kmalu',this)">Poteče v 14 dneh</button>
+            <button class="tab" onclick="setNarocnineFilter('brez',this)">Brez paketa</button>
               </div>
             </div>
             <div class="table-scroll"><table class="data-table" id="narocnineTable"></table></div>
@@ -1866,9 +1867,12 @@ function paketCena(id){
   return (p && p.cena) ? Number(p.cena) : 0;
 }
 function narocnineVrstice(){
-  return clients.filter(function(c){ return c.paket_id; }).map(function(c){
+  return clients.map(function(c){
     return { c: c, st: narocninaStatus(c), cena: paketCena(c.paket_id) };
   });
+}
+function nacinLabel(c){
+  return (c.nacin_placila === 'app') ? 'prek aplikacije' : 'gotovina / dogovor';
 }
 function setNarocnineFilter(f, btn){
   narocnineFilter = f;
@@ -1882,15 +1886,17 @@ function renderNarocnineTable(){
   let rows = narocnineVrstice();
   if(narocnineFilter === 'zapadlo') rows = rows.filter(function(r){ return r.st.kljuc === 'zapadlo'; });
   if(narocnineFilter === 'kmalu') rows = rows.filter(function(r){ return r.st.kljuc === 'kmalu'; });
-  const head = '<thead><tr>' + ['Stranka','Paket','Plačano do','Status','Znesek'].map(function(h){ return '<th>' + h + '</th>'; }).join('') + '</tr></thead>';
+  if(narocnineFilter === 'brez') rows = rows.filter(function(r){ return r.st.kljuc === 'brez'; });
+  const head = '<thead><tr>' + ['Stranka','Paket','Način','Plačano do','Status','Znesek'].map(function(h){ return '<th>' + h + '</th>'; }).join('') + '</tr></thead>';
   if(rows.length === 0){
-    table.innerHTML = head + '<tbody><tr><td colspan="5" class="dim" style="padding:18px;text-align:center">Ni zadetkov.</td></tr></tbody>';
+    table.innerHTML = head + '<tbody><tr><td colspan="6" class="dim" style="padding:18px;text-align:center">Ni zadetkov.</td></tr></tbody>';
     return;
   }
   table.innerHTML = head + '<tbody>' + rows.map(function(r){
     return '<tr onclick="openClientFromTable(\'' + r.c.id + '\')">'
       + '<td><b>' + escapeHtml(r.c.ime) + '</b></td>'
-      + '<td>' + escapeHtml(paketIme(r.c.paket_id)) + '</td>'
+      + '<td>' + (r.c.paket_id ? escapeHtml(paketIme(r.c.paket_id)) : '<span class="dim">— dodeli —</span>') + '</td>'
+      + '<td class="dim">' + nacinLabel(r.c) + '</td>'
       + '<td>' + (r.c.placano_do || '—') + '</td>'
       + '<td><span class="' + r.st.cls + '">' + r.st.txt + '</span></td>'
       + '<td class="num">' + (r.cena ? r.cena + ' €' : '—') + '</td>'
@@ -1899,7 +1905,7 @@ function renderNarocnineTable(){
 }
 function renderNarocnineDashboard(){
   const vrstice = narocnineVrstice();
-  const aktivne = vrstice.filter(function(r){ return r.st.kljuc === 'placano' || r.st.kljuc === 'kmalu'; });
+  const aktivne = vrstice.filter(function(r){ return (r.st.kljuc === 'placano' || r.st.kljuc === 'kmalu') && r.c.paket_id; });
   const zapadle = vrstice.filter(function(r){ return r.st.kljuc === 'zapadlo'; });
   const prihodek = aktivne.reduce(function(a,r){ return a + r.cena; }, 0);
   const neplacano = zapadle.reduce(function(a,r){ return a + r.cena; }, 0);
@@ -1928,7 +1934,7 @@ function renderNarocnineDashboard(){
     + '<div class="stat" style="text-align:left"><b>' + povprecje + ' €</b><span>povprečje na stranko</span></div>'
     + '</div>';
 
-  const opomniki = vrstice.filter(function(r){ return r.st.kljuc === 'zapadlo' || r.st.kljuc === 'kmalu'; });
+  const opomniki = vrstice.filter(function(r){ return r.st.kljuc === 'zapadlo' || r.st.kljuc === 'kmalu' || r.st.kljuc === 'brez'; });
   const oc = document.getElementById('opomnikiCard');
   if(opomniki.length === 0){ oc.classList.add('hidden'); }
   else {
@@ -1939,7 +1945,9 @@ function renderNarocnineDashboard(){
       + opomniki.map(function(r){
         return '<div class="prog-ex-row" style="align-items:center">'
           + '<span><b>' + escapeHtml(r.c.ime) + '</b><br><span style="font-size:11.5px;color:var(--muted)">' + r.st.txt + (r.c.opomnik_poslan ? ' · opomnik poslan ' + formatShortDate(r.c.opomnik_poslan) : ' · brez opomnika') + '</span></span>'
-          + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="opomniStranko(\'' + r.c.id + '\')">' + (r.st.kljuc === 'zapadlo' ? 'Pošlji' : 'Najavi') + '</button>'
+          + (r.st.kljuc === 'brez'
+              ? '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openClientFromTable(\'' + r.c.id + '\')">Dodeli paket</button>'
+              : '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="opomniStranko(\'' + r.c.id + '\')">' + (r.st.kljuc === 'zapadlo' ? 'Pošlji' : 'Najavi') + '</button>')
           + '</div>';
       }).join('');
   }
@@ -1972,9 +1980,9 @@ function exportNarocnineCsv(){
     const t = String(v);
     return (t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t.replace(/"/g,'""') + '"' : t;
   };
-  const lines = ['Stranka;Paket;Placano do;Status;Znesek EUR'];
+  const lines = ['Stranka;Paket;Nacin placila;Placano do;Status;Znesek EUR'];
   narocnineVrstice().forEach(function(r){
-    lines.push([r.c.ime, paketIme(r.c.paket_id), r.c.placano_do, r.st.txt, r.cena].map(esc).join(';'));
+    lines.push([r.c.ime, r.c.paket_id ? paketIme(r.c.paket_id) : '', nacinLabel(r.c), r.c.placano_do, r.st.txt, r.cena].map(esc).join(';'));
   });
   const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
