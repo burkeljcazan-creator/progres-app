@@ -604,6 +604,38 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
         </div>
 
         <div class="card" id="bodyDataCard"></div>
+
+        <div class="card" id="subCard">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px">
+            <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Naročnina</h3>
+            <button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="toggleSubForm()">Uredi</button>
+          </div>
+          <div id="subSummary"></div>
+          <div class="hidden" id="subForm" style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+            <div class="field"><label>Paket</label>
+              <select id="ecPaket" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)">
+                <option value="">— brez paketa —</option>
+              </select>
+            </div>
+            <div class="field"><label>Način plačila</label>
+              <select id="ecNacin" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)">
+                <option value="gotovina">Gotovina / dogovor — dostop brez omejitve</option>
+                <option value="app">Prek aplikacije — dostop šele po plačilu</option>
+              </select>
+            </div>
+            <div class="field"><label>Plačano do (datum)</label><input type="date" id="ecPlacanoDo"></div>
+            <div class="field"><label>Podaljšaj za št. mesecev</label>
+              <div style="display:flex;gap:8px">
+                <input type="number" id="ecMeseci" min="1" max="36" placeholder="npr. 3" style="flex:1">
+                <button type="button" class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink);white-space:nowrap" onclick="podaljsajPaket()">Izračunaj</button>
+              </div>
+            </div>
+            <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
+              <input type="checkbox" id="ecPlacano" style="width:19px;height:19px;accent-color:var(--primary-ink)"> Naročnina je plačana
+            </label>
+            <button class="btn" id="subSaveBtn" onclick="saveSubscription()">Shrani naročnino</button>
+          </div>
+        </div>
   
         <div class="sec-head">
           <h2 style="font-size:14.5px">Telesni podatki (za izračun prehrane)</h2>
@@ -639,31 +671,6 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           <div class="field"><label>Poškodbe / omejitve pri gibanju</label><input type="text" id="ecPoskodbe" placeholder="npr. bolečina v ramenu, operirano koleno"></div>
           <div class="field"><label>Zdravstvena stanja, pomembna za trening</label><input type="text" id="ecBolezni" placeholder="npr. sladkorna bolezen, astma, visok krvni tlak"></div>
           <div class="field"><label>Druge opombe</label><input type="text" id="ecOpombe" placeholder="karkoli, kar je vredno vedeti"></div>
-          <div class="grid2">
-            <div class="field"><label>Paket</label>
-              <select id="ecPaket" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px">
-                <option value="">— brez paketa —</option>
-              </select>
-            </div>
-            <div class="field"><label>Plačano do (datum)</label><input type="date" id="ecPlacanoDo"></div>
-          <div class="field"><label>Način plačila</label>
-            <select id="ecNacin" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)">
-              <option value="gotovina">Gotovina / dogovor — dostop brez omejitve</option>
-              <option value="app">Prek aplikacije — dostop šele po plačilu</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>Podaljšaj za št. mesecev</label>
-            <div style="display:flex;gap:8px">
-              <input type="number" id="ecMeseci" min="1" max="36" placeholder="npr. 3" style="flex:1">
-              <button type="button" class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink);white-space:nowrap" onclick="podaljsajPaket()">Izračunaj</button>
-            </div>
-          </div>
-          </div>
-          <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
-            <input type="checkbox" id="ecPlacano" style="width:19px;height:19px;accent-color:var(--primary-ink)"> Naročnina je plačana
-          </label>
           <button class="btn" id="ecSaveBtn" onclick="saveClientEdits()">Shrani spremembe</button>
         </div>
   
@@ -3032,7 +3039,7 @@ function podaljsajPaket(){
   d.setMonth(d.getMonth() + n);
   document.getElementById('ecPlacanoDo').value = d.toISOString().slice(0,10);
   document.getElementById('ecPlacano').checked = true;
-  toast('Plačano do ' + d.toISOString().slice(0,10) + ' — shrani spremembe.');
+  toast('Plačano do ' + d.toISOString().slice(0,10) + ' — klikni Shrani naročnino.');
 }
 async function handleAddClient(e){
   e.preventDefault();
@@ -3213,6 +3220,7 @@ function openClientDetail(id){
   document.getElementById('nutritionTargetForm').classList.add('hidden');
   renderClientAccessStatus(c);
   renderBodyData(c);
+  renderSubSummary(c);
   loadMealOverrides(id).then(function(){ renderNutritionSection(c); });
   loadAssignedPrograms(id);
   loadTrainingLog(id);
@@ -4873,14 +4881,60 @@ function toggleEditClient(){
   document.getElementById('ecPoskodbe').value = c.poskodbe || '';
   document.getElementById('ecBolezni').value = c.bolezni || '';
   document.getElementById('ecOpombe').value = c.opombe || '';
+  document.getElementById('editClientForm').classList.toggle('hidden');
+}
+function renderSubSummary(c){
+  const wrap = document.getElementById('subSummary');
+  if(!wrap) return;
+  const st = narocninaStatus(c);
+  const nacin = (c.nacin_placila === 'app') ? 'prek aplikacije' : 'gotovina / dogovor';
+  const cena = c.paket_id ? paketCena(c.paket_id) : 0;
+  wrap.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+    + '<div><div style="font-size:10.5px;color:var(--muted);margin-bottom:3px">Paket</div>'
+    +   '<div style="font-size:13.5px;font-weight:600">' + (c.paket_id ? escapeHtml(paketIme(c.paket_id)) + (cena ? ' · ' + cena + ' €' : '') : '—') + '</div></div>'
+    + '<div><div style="font-size:10.5px;color:var(--muted);margin-bottom:3px">Status</div>'
+    +   '<div><span class="' + st.cls + '">' + st.txt + '</span></div></div>'
+    + '<div><div style="font-size:10.5px;color:var(--muted);margin-bottom:3px">Način plačila</div>'
+    +   '<div style="font-size:13.5px;font-weight:600">' + nacin + '</div></div>'
+    + '<div><div style="font-size:10.5px;color:var(--muted);margin-bottom:3px">Plačano do</div>'
+    +   '<div style="font-size:13.5px;font-weight:600">' + (c.placano_do || '—') + '</div></div>'
+    + '</div>';
+}
+function toggleSubForm(){
+  const c = clients.find(function(x){ return x.id === currentClientId; });
+  if(!c) return;
   document.getElementById('ecPlacano').checked = !!c.placano;
   document.getElementById('ecPlacanoDo').value = c.placano_do || '';
   document.getElementById('ecNacin').value = c.nacin_placila || 'gotovina';
+  document.getElementById('ecMeseci').value = '';
   const sel = document.getElementById('ecPaket');
   sel.innerHTML = '<option value="">— brez paketa —</option>' + paketi.map(function(p){
     return '<option value="' + p.id + '"' + (c.paket_id === p.id ? ' selected' : '') + '>' + escapeHtml(p.ime) + (p.cena ? ' (' + p.cena + ' €)' : '') + '</option>';
   }).join('');
-  document.getElementById('editClientForm').classList.toggle('hidden');
+  document.getElementById('subForm').classList.toggle('hidden');
+}
+async function saveSubscription(){
+  const btn = document.getElementById('subSaveBtn');
+  btn.disabled = true; btn.textContent = 'Shranjujem...';
+  try{
+    const payload = {
+      paket_id: document.getElementById('ecPaket').value || null,
+      placano: document.getElementById('ecPlacano').checked,
+      placano_do: document.getElementById('ecPlacanoDo').value || null,
+      nacin_placila: document.getElementById('ecNacin').value
+    };
+    const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + currentClientId, {
+      method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju naročnine.');
+    const updated = (await res.json())[0];
+    const idx = clients.findIndex(function(x){ return x.id === currentClientId; });
+    if(idx > -1) clients[idx] = updated;
+    document.getElementById('subForm').classList.add('hidden');
+    renderSubSummary(updated);
+    toast('Naročnina shranjena ✓');
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Shrani naročnino'; }
 }
 async function saveClientEdits(){
   const btn = document.getElementById('ecSaveBtn');
@@ -4898,11 +4952,7 @@ async function saveClientEdits(){
       alergije: document.getElementById('ecAlergije').value.trim() || null,
       poskodbe: document.getElementById('ecPoskodbe').value.trim() || null,
       bolezni: document.getElementById('ecBolezni').value.trim() || null,
-      opombe: document.getElementById('ecOpombe').value.trim() || null,
-      paket_id: document.getElementById('ecPaket').value || null,
-      placano: document.getElementById('ecPlacano').checked,
-      placano_do: document.getElementById('ecPlacanoDo').value || null,
-      nacin_placila: document.getElementById('ecNacin').value
+      opombe: document.getElementById('ecOpombe').value.trim() || null
     };
     const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + currentClientId, {
       method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
