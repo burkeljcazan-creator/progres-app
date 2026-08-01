@@ -1602,7 +1602,11 @@ async function saveOnboarding(){
       method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
     });
     if(!res.ok) throw new Error('Napaka pri shranjevanju. Preveri, ali so vsa polja pravilno izpolnjena.');
-    clientProfile = (await res.json())[0];
+    const vrnjeno = await res.json();
+    if(!vrnjeno || vrnjeno.length === 0){
+      throw new Error('Shranjevanje je bilo zavrnjeno. Sporoči trenerju, da v Supabase zažene migracijo 33.');
+    }
+    clientProfile = vrnjeno[0];
     document.getElementById('clientOnboardingScreen').classList.add('hidden');
     await enterApp();
   }catch(err){ toast(err.message); btn.disabled = false; btn.textContent = 'Shrani in nadaljuj'; }
@@ -4074,7 +4078,9 @@ async function saveClientProfileName(){
       method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify({ ime: ime })
     });
     if(!res.ok) throw new Error('Napaka pri shranjevanju imena.');
-    clientProfile = (await res.json())[0];
+    const vrnjeno = await res.json();
+    if(!vrnjeno || vrnjeno.length === 0) throw new Error('Shranjevanje je bilo zavrnjeno. Sporoči trenerju, da v Supabase zažene migracijo 33.');
+    clientProfile = vrnjeno[0];
     document.getElementById('clientWhoName').textContent = ime;
     const zac = ime.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
     document.getElementById('clientAvatarInitials').textContent = zac;
