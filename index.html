@@ -445,16 +445,8 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
     <!-- ===== EKRAN: SEZNAM STRANK (vključno z analitiko) ===== -->
     <div id="clientsWorkspace">
     <div id="screenClients">
-      <div class="kpis" id="clientsKpis">
-        <div class="kpi"><b id="kpiClients">0</b><span>aktivnih strank</span></div>
-        <div class="kpi"><b id="kpiToday">0</b><span>dodanih danes</span></div>
-      </div>
-
-      <div class="group-label warn">Potrebuje pozornost</div>
-      <div id="needsAttentionList" style="margin-bottom:24px"></div>
-
       <input type="text" id="clientSearch" placeholder="Išči po imenu, cilju, alergijah…" oninput="filterClientList()" style="width:100%;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:4px;background:var(--card);color:var(--ink)">
-      <button class="btn-small" id="overviewBtn" style="width:100%;background:var(--primary-soft);color:var(--primary-ink);margin:8px 0 4px" onclick="showClientsOverview()">← Splošni pregled vseh strank</button>
+      <button class="btn-small hidden" id="overviewBtn" style="width:100%;background:var(--primary-soft);color:var(--primary-ink);margin:8px 0 4px" onclick="showClientsOverview()">← Pregled vseh strank</button>
       <div class="sec-head" style="margin-top:2px;margin-bottom:10px">
         <div class="group-label" style="padding:0">Vse stranke</div>
         <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleAddForm()">+ Dodaj</button>
@@ -2130,6 +2122,7 @@ async function showClientsOverview(){
   document.getElementById('topTabs').classList.remove('hidden');
   setTopTab('clients');
   currentClientId = null;
+  const ob = document.getElementById('overviewBtn'); if(ob) ob.classList.add('hidden');
   renderClientListOnly();
   ovYear = new Date().getFullYear();
   ovMonth = new Date().getMonth();
@@ -2707,14 +2700,7 @@ function renderFileInventory(){
           + '</div>';
       }).join('');
 }
-function showClients(){
-  hideAllScreens();
-  document.getElementById('screenClients').classList.remove('hidden');
-  document.getElementById('topTabs').classList.remove('hidden');
-  setTopTab('clients');
-  renderNeedsAttention();
-  renderClientListOnly();
-}
+function showClients(){ showClientsOverview(); }
 function showPrograms(){
   hideAllScreens();
   document.getElementById('screenPrograms').classList.remove('hidden');
@@ -2808,10 +2794,12 @@ async function renderClients(){
   const todayCount = clients.filter(function(c){ return (c.ustvarjena||'').slice(0,10) === today; }).length;
   const kpisWrap = document.getElementById('clientsKpis');
   const zDostopom = clients.filter(function(c){ return c.user_id; }).length;
-  kpisWrap.innerHTML =
-    '<div class="kpi"><b id="kpiClients">' + clients.length + '</b><span>aktivnih strank</span></div>'
-    + '<div class="kpi"><b id="kpiToday">' + todayCount + '</b><span>dodanih danes</span></div>'
-    + '<div class="kpi"><b>' + zDostopom + '</b><span>ima svoj dostop</span></div>';
+  if(kpisWrap){
+    kpisWrap.innerHTML =
+      '<div class="kpi"><b>' + clients.length + '</b><span>aktivnih strank</span></div>'
+      + '<div class="kpi"><b>' + todayCount + '</b><span>dodanih danes</span></div>'
+      + '<div class="kpi"><b>' + zDostopom + '</b><span>ima svoj dostop</span></div>';
+  }
 
   renderClientListOnly();
 
@@ -2985,6 +2973,7 @@ function openClientDetail(id){
   document.getElementById('cdMeta').textContent = bits.join(' · ') || 'Ni dodatnih podatkov';
   hideAllScreens();
   document.getElementById('screenClientDetail').classList.remove('hidden');
+  const ob = document.getElementById('overviewBtn'); if(ob) ob.classList.remove('hidden');
   const siroko = window.matchMedia('(min-width:1024px)').matches;
   if(siroko){
     document.getElementById('screenClients').classList.remove('hidden');
