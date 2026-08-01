@@ -227,16 +227,20 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .pick-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:12.5px;cursor:pointer;margin:0 6px 6px 0}
 .pick-chip:hover{border-color:var(--primary-ink);background:var(--primary-soft)}
 .pick-chip.added{background:var(--ok-soft);border-color:var(--mint);color:var(--mint-strong)}
-.cal-grid-head{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:6px}
-.cal-grid-head span{text-align:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.cal-cell{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:7px;cursor:pointer;display:flex;flex-direction:column;gap:3px;overflow:hidden}
-.cal-cell:hover{border-color:var(--primary-ink)}
-.cal-cell.empty{background:transparent;border-color:transparent;cursor:default}
-.cal-cell.today{border-color:var(--primary-ink);border-width:2px}
-.cal-cell.selected{background:var(--primary-soft)}
-.cal-cell .dnum{font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px}
-.cal-cell .badge-mid,.cal-cell .badge-ok{font-size:9px;padding:2px 6px;align-self:flex-start}
+.cal-grid-head{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:2px}
+.cal-grid-head span{text-align:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}
+.cal-day{aspect-ratio:1.15;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:7px 8px;font-family:'Inter',sans-serif;font-weight:600;font-size:11.5px;color:var(--ink);display:flex;flex-direction:column;gap:4px;justify-content:flex-start;cursor:pointer;background:var(--card);overflow:hidden}
+.cal-day:hover{border-color:var(--primary-ink)}
+.cal-day.on{background:var(--primary-soft);border-color:var(--primary-ink)}
+.cal-day.muted{color:var(--muted);background:var(--bg);cursor:default}
+.cal-day i{width:100%;height:4px;border-radius:2px;background:var(--primary);display:block;flex-shrink:0}
+.cal-day i.ok{background:var(--mint)}
+.cal-day i.split{height:5px}
+.cal-day .n{font-family:'Inter',sans-serif;font-weight:400;font-size:9.5px;color:var(--muted);line-height:1.25}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:10.5px;color:var(--muted)}
+.cal-legend span{display:flex;align-items:center;gap:6px}
+.cal-legend i{width:10px;height:10px;border-radius:3px;display:block}
 .prog-tile{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid transparent;border-radius:12px;cursor:pointer;margin-bottom:4px}
 .prog-tile:hover{background:var(--primary-soft)}
 .prog-tile.on{background:var(--primary-soft);border-color:var(--primary-ink)}
@@ -450,6 +454,7 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <div id="needsAttentionList" style="margin-bottom:24px"></div>
 
       <input type="text" id="clientSearch" placeholder="Išči po imenu, cilju, alergijah…" oninput="filterClientList()" style="width:100%;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:4px;background:var(--card);color:var(--ink)">
+      <button class="btn-small" id="overviewBtn" style="width:100%;background:var(--primary-soft);color:var(--primary-ink);margin:8px 0 4px" onclick="showClientsOverview()">← Splošni pregled vseh strank</button>
       <div class="sec-head" style="margin-top:2px;margin-bottom:10px">
         <div class="group-label" style="padding:0">Vse stranke</div>
         <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleAddForm()">+ Dodaj</button>
@@ -472,6 +477,49 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
     </div>
 
     <!-- ===== EKRAN: PROFIL STRANKE ===== -->
+    <div id="screenClientsOverview" class="hidden">
+      <div class="danes-head">
+        <div><h1>Pregled vseh strank</h1><div class="meta" id="ovMeta"></div></div>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="background:var(--primary-soft);color:var(--primary-ink);font-size:12px;padding:7px 12px" onclick="exportClientsCsv()">Izvozi poročilo</button>
+          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleAddForm()">+ Dodaj stranko</button>
+        </div>
+      </div>
+      <div id="ovKpis"></div>
+      <div class="cd-cols">
+        <div class="cd-main">
+          <div class="card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+              <div>
+                <h3 style="font-family:'Archivo',sans-serif;font-weight:700;font-size:14px">Koledar in doslednost — vse stranke</h3>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px" id="ovCalSub"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="badge-ok" id="ovDoslednost"></span>
+                <button class="btn-small" onclick="ovShiftMonth(-1)">‹</button>
+                <span id="ovMonthLabel" style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;min-width:100px;text-align:center"></span>
+                <button class="btn-small" onclick="ovShiftMonth(1)">›</button>
+              </div>
+            </div>
+            <div class="cal-grid-head">
+              <span>Pon</span><span>Tor</span><span>Sre</span><span>Čet</span><span>Pet</span><span>Sob</span><span>Ned</span>
+            </div>
+            <div class="cal" id="ovCalGrid"></div>
+            <div class="cal-legend">
+              <span><i style="background:var(--mint)"></i>opravljeno</span>
+              <span><i style="background:var(--danger)"></i>ni opravljeno</span>
+              <span><i style="background:var(--primary)"></i>načrtovano (danes in naprej)</span>
+            </div>
+          </div>
+          <div class="card" id="ovProgressCard"></div>
+        </div>
+        <div class="cd-side">
+          <div class="card" id="ovAttentionCard"></div>
+          <div class="card" id="ovSubsCard"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="screenClientDetail" class="hidden">
       <button class="back-btn" onclick="showClients()">← Nazaj na stranke</button>
       <div class="client-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
@@ -993,11 +1041,25 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
           <button class="btn-small" onclick="calShiftMonth(1)">›</button>
         </div>
       </div>
-      <div class="cal-grid-head">
-        <span>Pon</span><span>Tor</span><span>Sre</span><span>Čet</span><span>Pet</span><span>Sob</span><span>Ned</span>
+      <div class="cd-cols">
+        <div class="cd-main">
+          <div class="card">
+            <div class="cal-grid-head">
+              <span>Pon</span><span>Tor</span><span>Sre</span><span>Čet</span><span>Pet</span><span>Sob</span><span>Ned</span>
+            </div>
+            <div class="cal" id="calGrid"></div>
+            <div class="cal-legend">
+              <span><i style="background:var(--mint)"></i>opravljeno</span>
+              <span><i style="background:var(--danger)"></i>ni opravljeno</span>
+              <span><i style="background:var(--primary)"></i>načrtovano (danes in naprej)</span>
+            </div>
+          </div>
+        </div>
+        <div class="cd-side">
+          <div class="card" id="calDayPanel"></div>
+          <div class="card" id="calWeekCard"></div>
+        </div>
       </div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div class="card" id="calDayPanel" style="margin-top:16px"></div>
     </div>
 
     <!-- ===== EKRAN: NAROČNINE / PAKETI ===== -->
@@ -1244,7 +1306,11 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <div class="cal-grid-head">
         <span>Pon</span><span>Tor</span><span>Sre</span><span>Čet</span><span>Pet</span><span>Sob</span><span>Ned</span>
       </div>
-      <div class="cal-grid" id="clientCalGrid"></div>
+      <div class="cal" id="clientCalGrid"></div>
+      <div class="cal-legend">
+        <span><i style="background:var(--mint)"></i>opravljeno</span>
+        <span><i style="background:var(--primary)"></i>načrtovano</span>
+      </div>
       <div class="card" id="clientCalDayPanel" style="margin-top:16px"></div>
     </div>
 
@@ -1550,8 +1616,8 @@ function hideAllScreens(){
   stopChatPolling();
   const ws = document.getElementById('clientsWorkspace');
   if(ws) ws.classList.remove('split');
-  ['screenClients','screenClientDetail','screenPrograms','screenProgramBuilder','screenObroki','screenNastavitve','screenProgramPreview','screenClientChat','screenNarocnine'].forEach(function(id){
-    document.getElementById(id).classList.add('hidden');
+  ['screenClients','screenClientsOverview','screenClientDetail','screenPrograms','screenProgramBuilder','screenObroki','screenNastavitve','screenProgramPreview','screenClientChat','screenNarocnine','screenKoledar'].forEach(function(id){
+    const e = document.getElementById(id); if(e) e.classList.add('hidden');
   });
 }
 function setTopTab(tab){
@@ -1813,8 +1879,10 @@ let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
 let koledarData = [];
+let opravljeniData = [];
 let terminiData = [];
 const SLO_MESECI_POLNI = ['januar','februar','marec','april','maj','junij','julij','avgust','september','oktober','november','december'];
+const SLO_MESECI_MESTNIK = ['januarju','februarju','marcu','aprilu','maju','juniju','juliju','avgustu','septembru','oktobru','novembru','decembru'];
 const DNEVI_POLNI = ['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'];
 
 function showKoledar(){
@@ -1830,12 +1898,18 @@ function showKoledar(){
 async function loadKoledarMonth(){
   const start = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-01';
   const end = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(new Date(calYear, calMonth+1, 0).getDate()).padStart(2,'0');
-  const meta = document.getElementById('koledarMeta');
-  if(meta) meta.textContent = trenerjevTermini ? 'Dodeljeni treningi in individualni termini' : 'Dodeljeni treningi po dnevih';
   try{
-    const res = await fetch(SUPABASE_URL + '/rest/v1/koledar_treningi?trener_id=eq.' + session.user.id + '&datum=gte.' + start + '&datum=lte.' + end + '&select=*,stranke(ime),programi(ime)', { headers: authHeaders(), cache:'no-store' });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/koledar_treningi?trener_id=eq.' + session.user.id + '&datum=gte.' + start + '&datum=lte.' + end + '&select=*,stranke(ime),programi(ime,program_vaje(serije))', { headers: authHeaders(), cache:'no-store' });
     koledarData = res.ok ? await res.json() : [];
   }catch(e){ koledarData = []; }
+  opravljeniData = [];
+  if(clients.length > 0){
+    try{
+      const ids = clients.map(function(c){ return c.id; }).join(',');
+      const r = await fetch(SUPABASE_URL + '/rest/v1/treningi?stranka_id=in.(' + ids + ')&datum=gte.' + start + '&datum=lte.' + end + '&select=stranka_id,program_id,datum,serije(id)', { headers: authHeaders(), cache:'no-store' });
+      opravljeniData = r.ok ? await r.json() : [];
+    }catch(e){ opravljeniData = []; }
+  }
   terminiData = [];
   if(trenerjevTermini){
     try{
@@ -1843,8 +1917,21 @@ async function loadKoledarMonth(){
       terminiData = res2.ok ? await res2.json() : [];
     }catch(e){ terminiData = []; }
   }
+  const meta = document.getElementById('koledarMeta');
+  if(meta) meta.textContent = clients.length + ' strank · ' + koledarData.length + ' načrtovanih treningov v ' + SLO_MESECI_MESTNIK[calMonth];
   renderCalGrid();
   renderCalDayPanel();
+  renderCalWeek();
+}
+function jeOpravljen(strankaId, programId, iso){
+  return opravljeniData.some(function(t){
+    return t.stranka_id === strankaId && t.datum === iso && (!programId || !t.program_id || t.program_id === programId);
+  });
+}
+function dnevniPovzetek(iso){
+  const dnevni = koledarData.filter(function(k){ return k.datum === iso; });
+  const opravljeni = dnevni.filter(function(k){ return jeOpravljen(k.stranka_id, k.program_id, iso); }).length;
+  return { skupaj: dnevni.length, opravljeni: opravljeni, dnevni: dnevni };
 }
 function calShiftMonth(delta){
   calMonth += delta;
@@ -1860,20 +1947,38 @@ function renderCalGrid(){
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const danesIso = new Date().toISOString().slice(0,10);
   let html = '';
-  for(let i=0;i<startOffset;i++) html += '<div class="cal-cell empty"></div>';
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  for(let i=startOffset;i>0;i--){
+    html += '<div class="cal-day muted">' + (prevDays - i + 1) + '</div>';
+  }
   for(let d=1; d<=daysInMonth; d++){
     const iso = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-    const dnevni = koledarData.filter(function(k){ return k.datum === iso; });
-    const stStrank = new Set(dnevni.map(function(k){ return k.stranka_id; })).size;
-    const prostiTermini = terminiData.filter(function(t){ return t.datum === iso && !t.stranka_id; }).length;
-    let cls = 'cal-cell';
-    if(iso === danesIso) cls += ' today';
-    if(iso === calSelectedDate) cls += ' selected';
-    html += '<div class="' + cls + '" onclick="selectCalDay(\'' + iso + '\')"><div class="dnum">' + d + '</div>'
-      + (stStrank ? '<span class="badge-mid">' + stStrank + (stStrank===1?' stranka':(stStrank===2?' stranki':(stStrank===3||stStrank===4?' stranke':' strank'))) + '</span>' : '')
-      + (prostiTermini ? '<span class="badge-ok">' + prostiTermini + ' prosto</span>' : '')
+    const pv = dnevniPovzetek(iso);
+    const vPrihodnosti = iso >= danesIso;
+    let cls = 'cal-day';
+    if(iso === calSelectedDate) cls += ' on';
+    let vrstica = '', opis = '';
+    if(pv.skupaj > 0){
+      if(vPrihodnosti){
+        vrstica = '<i></i>';
+        opis = iso === danesIso
+          ? pv.opravljeni + '/' + pv.skupaj + ' danes'
+          : pv.skupaj + ' ' + (pv.skupaj === 1 ? 'načrtovan' : (pv.skupaj === 2 ? 'načrtovana' : (pv.skupaj <= 4 ? 'načrtovani' : 'načrtovanih')));
+      } else {
+        const pct = Math.round((pv.opravljeni / pv.skupaj) * 100);
+        vrstica = pct === 100
+          ? '<i class="ok split"></i>'
+          : '<i class="split" style="background:linear-gradient(to right, var(--mint) 0 ' + pct + '%, var(--danger) ' + pct + '% 100%)"></i>';
+        opis = pv.opravljeni + '/' + pv.skupaj;
+      }
+    }
+    html += '<div class="' + cls + '" onclick="selectCalDay(\'' + iso + '\')">'
+      + '<span>' + d + '</span>' + vrstica
+      + (opis ? '<span class="n">' + opis + '</span>' : '')
       + '</div>';
   }
+  const manjka = (7 - ((startOffset + daysInMonth) % 7)) % 7;
+  for(let i=1;i<=manjka;i++) html += '<div class="cal-day muted">' + i + '</div>';
   grid.innerHTML = html;
 }
 function selectCalDay(iso){
@@ -1881,36 +1986,78 @@ function selectCalDay(iso){
   renderCalGrid();
   renderCalDayPanel();
 }
+function renderCalWeek(){
+  const wrap = document.getElementById('calWeekCard');
+  if(!wrap) return;
+  const danes = new Date();
+  const zamik = (danes.getDay() + 6) % 7;
+  const pon = new Date(danes); pon.setDate(danes.getDate() - zamik);
+  const danesIso = danes.toISOString().slice(0,10);
+  const dnevi = [];
+  let skupajOpr = 0, skupajVse = 0;
+  for(let i=0;i<7;i++){
+    const d = new Date(pon); d.setDate(pon.getDate() + i);
+    const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const pv = dnevniPovzetek(iso);
+    skupajOpr += pv.opravljeni; skupajVse += pv.skupaj;
+    dnevi.push({ label: DNI7[i], skupaj: pv.skupaj, opravljeni: pv.opravljeni, prihodnost: iso >= danesIso });
+  }
+  const maxV = Math.max.apply(null, dnevi.map(function(x){ return x.skupaj; })) || 1;
+  const H = 96;
+  const bars = dnevi.map(function(x){
+    const h = x.skupaj ? Math.max(4, (x.skupaj / maxV) * H) : 0;
+    const barva = x.prihodnost ? 'var(--primary)' : (x.opravljeni >= x.skupaj && x.skupaj > 0 ? 'var(--mint)' : 'var(--danger)');
+    return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;height:100%">'
+      + (h ? '<div title="' + x.opravljeni + '/' + x.skupaj + '" style="width:100%;border-radius:7px 7px 0 0;background:' + barva + ';height:' + h.toFixed(1) + 'px"></div>' : '')
+      + '<div style="font-size:10px;color:var(--muted)">' + x.label + '</div></div>';
+  }).join('');
+  wrap.innerHTML = chartCardHead('Ta teden', '', skupajVse ? (skupajOpr + ' / ' + skupajVse + ' zaključenih') : '', 'ok')
+    + '<div style="display:flex;align-items:flex-end;gap:9px;height:' + H + 'px">' + bars + '</div>';
+}
 function renderCalDayPanel(){
   const panel = document.getElementById('calDayPanel');
   if(!calSelectedDate){ panel.innerHTML = ''; return; }
   const d = new Date(calSelectedDate + 'T00:00:00');
-  const naziv = DNEVI_POLNI[d.getDay()] + ', ' + d.getDate() + '. ' + SLO_MESECI_POLNI[d.getMonth()];
-  const dnevni = koledarData.filter(function(k){ return k.datum === calSelectedDate; });
-  const dnevniHtml = dnevni.length === 0 ? '<div class="empty" style="margin:0">Ni dodeljenih treningov ta dan.</div>'
-    : dnevni.map(function(k){
-        return '<div class="prog-ex-row" style="align-items:center"><span><b>' + escapeHtml(k.stranke ? k.stranke.ime : '?') + '</b><br><span style="font-size:11.5px;color:var(--muted)">' + escapeHtml(k.programi ? k.programi.ime : 'brez programa') + '</span></span>'
+  const naziv = DNEVI_POLNI[d.getDay()].charAt(0).toUpperCase() + DNEVI_POLNI[d.getDay()].slice(1) + ', ' + d.getDate() + '. ' + SLO_MESECI_POLNI[d.getMonth()];
+  const danesIso = new Date().toISOString().slice(0,10);
+  const pv = dnevniPovzetek(calSelectedDate);
+  const dnevniHtml = pv.dnevni.length === 0 ? '<div class="empty" style="margin:0">Ni dodeljenih treningov ta dan.</div>'
+    : pv.dnevni.map(function(k){
+        const opr = jeOpravljen(k.stranka_id, k.program_id, calSelectedDate);
+        const t = opravljeniData.find(function(x){ return x.stranka_id === k.stranka_id && x.datum === calSelectedDate; });
+        const skupajSerij = k.programi ? (k.programi.program_vaje || []).reduce(function(a,v){ return a + (v.serije || 0); }, 0) : 0;
+        const opravljenihSerij = (t && t.serije) ? t.serije.length : 0;
+        let znacka;
+        if(opr && skupajSerij > 0 && opravljenihSerij >= skupajSerij) znacka = '<span class="badge-ok">zaključeno</span>';
+        else if(opr) znacka = '<span class="badge-mid">v teku</span>';
+        else if(calSelectedDate >= danesIso) znacka = '<span class="badge-mid">načrtovano</span>';
+        else znacka = '<span class="badge-bad">ni opravljeno</span>';
+        const podnaslov = (k.programi ? escapeHtml(k.programi.ime) : 'brez programa')
+          + (skupajSerij ? (' · ' + (opr ? opravljenihSerij + '/' : '') + skupajSerij + ' serij') : '');
+        return '<div class="prog-ex-row" style="align-items:center">'
+          + '<span style="min-width:0"><b>' + escapeHtml(k.stranke ? k.stranke.ime : '?') + '</b><br><span style="font-size:11.5px;color:var(--muted)">' + podnaslov + '</span></span>'
+          + znacka
           + '<button class="btn-small" onclick="removeKoledarTrening(\'' + k.id + '\')">×</button></div>';
       }).join('');
   let terminiHtml = '';
   if(trenerjevTermini){
     const dnevniT = terminiData.filter(function(t){ return t.datum === calSelectedDate; }).sort(function(a,b){ return a.ura.localeCompare(b.ura); });
     terminiHtml = '<div class="sec-head" style="margin-top:22px"><h2 style="font-size:14.5px">Individualni termini</h2>'
-      + '<button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleTerminForm()">+ Dodaj termin</button></div>'
+      + '<button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleTerminForm()">+ Termin</button></div>'
       + '<div class="card hidden" id="terminForm" style="margin-bottom:14px">'
       + '<div class="grid2"><div class="field"><label>Ura</label><input type="time" id="tUra"></div><div class="field"><label>Trajanje (min)</label><input type="number" id="tTrajanje" value="60"></div></div>'
       + '<button class="btn" onclick="saveTermin()">Shrani termin</button></div>'
-      + (dnevniT.length === 0 ? '<div class="empty">Ni terminov ta dan.</div>' : dnevniT.map(function(t){
+      + (dnevniT.length === 0 ? '<div class="empty" style="margin:0">Ni terminov ta dan.</div>' : dnevniT.map(function(t){
           const status = t.stranka_id ? ('<span class="badge-mid">' + escapeHtml(t.stranke ? t.stranke.ime : 'zasedeno') + '</span>') : '<span class="badge-ok">prosto</span>';
           return '<div class="prog-ex-row" style="align-items:center"><span><b>' + escapeHtml(t.ura) + '</b> · ' + t.trajanje_min + ' min</span>' + status + '<button class="btn-small" onclick="deleteTermin(\'' + t.id + '\')">×</button></div>';
         }).join(''));
   }
   panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px">'
     + '<h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">' + naziv + '</h3>'
-    + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="toggleAssignTreningForm()">+ Dodeli trening</button></div>'
+    + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="toggleAssignTreningForm()">+ Dodaj</button></div>'
     + '<div class="card hidden" id="assignTreningForm" style="margin-bottom:14px">'
-    + '<div class="grid2"><div class="field"><label>Stranka</label><select id="atStranka" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)"></select></div>'
-    + '<div class="field"><label>Program</label><select id="atProgram" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)"></select></div></div>'
+    + '<div class="field"><label>Stranka</label><select id="atStranka" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)"></select></div>'
+    + '<div class="field"><label>Program</label><select id="atProgram" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;background:var(--card);color:var(--ink)"></select></div>'
     + '<button class="btn" onclick="saveKoledarTrening()">Dodeli</button></div>'
     + dnevniHtml + terminiHtml;
 }
@@ -1971,6 +2118,187 @@ async function deleteTermin(id){
     if(!res.ok) throw new Error('Napaka pri brisanju.');
     await loadKoledarMonth();
   }catch(err){ toast(err.message); }
+}
+// ---------- PREGLED VSEH STRANK ----------
+let ovYear = new Date().getFullYear();
+let ovMonth = new Date().getMonth();
+async function showClientsOverview(){
+  hideAllScreens();
+  document.getElementById('screenClientsOverview').classList.remove('hidden');
+  document.getElementById('screenClients').classList.remove('hidden');
+  document.getElementById('clientsWorkspace').classList.add('split');
+  document.getElementById('topTabs').classList.remove('hidden');
+  setTopTab('clients');
+  currentClientId = null;
+  renderClientListOnly();
+  ovYear = new Date().getFullYear();
+  ovMonth = new Date().getMonth();
+  await loadOverviewMonth();
+}
+function ovShiftMonth(delta){
+  ovMonth += delta;
+  if(ovMonth < 0){ ovMonth = 11; ovYear--; }
+  if(ovMonth > 11){ ovMonth = 0; ovYear++; }
+  loadOverviewMonth();
+}
+async function loadOverviewMonth(){
+  calYear = ovYear; calMonth = ovMonth;
+  await loadOverviewData();
+  renderOverviewKpis();
+  renderOverviewCal();
+  renderOverviewAttention();
+  renderOverviewSubs();
+  renderOverviewProgress();
+}
+async function loadOverviewData(){
+  const start = ovYear + '-' + String(ovMonth+1).padStart(2,'0') + '-01';
+  const end = ovYear + '-' + String(ovMonth+1).padStart(2,'0') + '-' + String(new Date(ovYear, ovMonth+1, 0).getDate()).padStart(2,'0');
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/koledar_treningi?trener_id=eq.' + session.user.id + '&datum=gte.' + start + '&datum=lte.' + end + '&select=*,stranke(ime)', { headers: authHeaders(), cache:'no-store' });
+    koledarData = res.ok ? await res.json() : [];
+  }catch(e){ koledarData = []; }
+  opravljeniData = [];
+  if(clients.length > 0){
+    try{
+      const ids = clients.map(function(c){ return c.id; }).join(',');
+      const r = await fetch(SUPABASE_URL + '/rest/v1/treningi?stranka_id=in.(' + ids + ')&datum=gte.' + start + '&datum=lte.' + end + '&select=stranka_id,program_id,datum', { headers: authHeaders(), cache:'no-store' });
+      opravljeniData = r.ok ? await r.json() : [];
+    }catch(e){ opravljeniData = []; }
+  }
+  if(paketi.length === 0) await loadPaketi();
+}
+function ovDoslednostPct(){
+  const danesIso = new Date().toISOString().slice(0,10);
+  const pretekli = koledarData.filter(function(k){ return k.datum < danesIso; });
+  if(pretekli.length === 0) return null;
+  const opr = pretekli.filter(function(k){ return jeOpravljen(k.stranka_id, k.program_id, k.datum); }).length;
+  return Math.round((opr / pretekli.length) * 100);
+}
+function renderOverviewKpis(){
+  const danesIso = new Date().toISOString().slice(0,10);
+  const doslednost = ovDoslednostPct();
+  const zakljucenih = opravljeniData.length;
+  const potrebujejo = clients.filter(function(c){ return needsAttentionFlags(c).length > 0; });
+  const meta = document.getElementById('ovMeta');
+  if(meta) meta.textContent = SLO_MESECI_POLNI[ovMonth] + ' ' + ovYear + ' · ' + clients.length + ' aktivnih strank · izberi stranko v seznamu za podroben pogled';
+  const sub = document.getElementById('ovCalSub');
+  if(sub) sub.textContent = SLO_MESECI_POLNI[ovMonth] + ' ' + ovYear + ' · delež opravljenih treningov po dnevih';
+  const dosl = document.getElementById('ovDoslednost');
+  if(dosl) dosl.textContent = doslednost === null ? 'ni podatkov' : (doslednost + ' % doslednost');
+  document.getElementById('ovKpis').innerHTML = '<div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:16px">'
+    + '<div class="stat" style="text-align:left"><b>' + clients.length + '</b><span>aktivnih strank</span></div>'
+    + '<div class="stat" style="text-align:left"><b>' + (doslednost === null ? '—' : doslednost + ' %') + '</b><span>doslednost vnosov</span></div>'
+    + '<div class="stat" style="text-align:left"><b>' + zakljucenih + '</b><span>zaključenih treningov</span></div>'
+    + '<div class="stat" style="text-align:left"><b' + (potrebujejo.length ? ' style="color:var(--danger)"' : '') + '>' + potrebujejo.length + '</b><span>potrebuje pozornost</span>'
+      + (potrebujejo.length ? '<span style="display:block;font-size:10.5px;font-weight:600;margin-top:5px;color:var(--danger)">' + potrebujejo.slice(0,3).map(function(c){ return escapeHtml(kratkoIme(c.ime)); }).join(', ') + '</span>' : '')
+    + '</div></div>';
+}
+function kratkoIme(ime){
+  const d = ime.split(' ');
+  return d.length > 1 ? (d[0] + ' ' + d[1].charAt(0) + '.') : ime;
+}
+function renderOverviewCal(){
+  document.getElementById('ovMonthLabel').textContent = SLO_MESECI_POLNI[ovMonth] + ' ' + ovYear;
+  const grid = document.getElementById('ovCalGrid');
+  const first = new Date(ovYear, ovMonth, 1);
+  const startOffset = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(ovYear, ovMonth+1, 0).getDate();
+  const danesIso = new Date().toISOString().slice(0,10);
+  let html = '';
+  const prevDays = new Date(ovYear, ovMonth, 0).getDate();
+  for(let i=startOffset;i>0;i--) html += '<div class="cal-day muted">' + (prevDays - i + 1) + '</div>';
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = ovYear + '-' + String(ovMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const pv = dnevniPovzetek(iso);
+    const vPrihodnosti = iso >= danesIso;
+    let vrstica = '', opis = '';
+    if(pv.skupaj > 0){
+      if(vPrihodnosti){
+        vrstica = '<i></i>';
+        opis = iso === danesIso ? (pv.opravljeni + '/' + pv.skupaj + ' danes')
+          : pv.skupaj + ' ' + (pv.skupaj === 1 ? 'načrtovan' : (pv.skupaj === 2 ? 'načrtovana' : (pv.skupaj <= 4 ? 'načrtovani' : 'načrtovanih')));
+      } else {
+        const pct = Math.round((pv.opravljeni / pv.skupaj) * 100);
+        vrstica = pct === 100 ? '<i class="ok split"></i>'
+          : '<i class="split" style="background:linear-gradient(to right, var(--mint) 0 ' + pct + '%, var(--danger) ' + pct + '% 100%)"></i>';
+        opis = pv.opravljeni + '/' + pv.skupaj;
+      }
+    }
+    html += '<div class="cal-day" onclick="showKoledarNaDan(\'' + iso + '\')"><span>' + d + '</span>' + vrstica
+      + (opis ? '<span class="n">' + opis + '</span>' : '') + '</div>';
+  }
+  const manjka = (7 - ((startOffset + daysInMonth) % 7)) % 7;
+  for(let i=1;i<=manjka;i++) html += '<div class="cal-day muted">' + i + '</div>';
+  grid.innerHTML = html;
+}
+function showKoledarNaDan(iso){
+  calYear = parseInt(iso.slice(0,4));
+  calMonth = parseInt(iso.slice(5,7)) - 1;
+  calSelectedDate = iso;
+  hideAllScreens();
+  document.getElementById('screenKoledar').classList.remove('hidden');
+  document.getElementById('topTabs').classList.remove('hidden');
+  setTopTab('koledar');
+  loadKoledarMonth();
+}
+function renderOverviewAttention(){
+  const wrap = document.getElementById('ovAttentionCard');
+  const potrebujejo = clients.filter(function(c){ return needsAttentionFlags(c).length > 0; });
+  wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
+    + '<h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">Potrebuje pozornost</h3>'
+    + '<span class="' + (potrebujejo.length ? 'badge-bad' : 'badge-ok') + '">' + potrebujejo.length + '</span></div>'
+    + (potrebujejo.length === 0 ? '<div class="empty" style="margin:0">Vse je urejeno ✓</div>'
+      : potrebujejo.map(function(c){
+          return '<div class="prog-ex-row" style="align-items:center">'
+            + '<span style="min-width:0"><b>' + escapeHtml(c.ime) + '</b><br><span style="font-size:11.5px;color:var(--danger)">' + needsAttentionFlags(c).join(' · ') + '</span></span>'
+            + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openClientDetail(\'' + c.id + '\')">Odpri</button></div>';
+        }).join(''));
+}
+function renderOverviewSubs(){
+  const wrap = document.getElementById('ovSubsCard');
+  const vrstice = narocnineVrstice();
+  const aktivne = vrstice.filter(function(r){ return r.st.kljuc === 'placano' || r.st.kljuc === 'kmalu'; });
+  const zapadle = vrstice.filter(function(r){ return r.st.kljuc === 'zapadlo'; });
+  const kmalu = vrstice.filter(function(r){ return r.st.kljuc === 'kmalu'; });
+  const prihodek = aktivne.reduce(function(a,r){ return a + r.cena; }, 0);
+  const neplacano = zapadle.reduce(function(a,r){ return a + r.cena; }, 0);
+  wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
+    + '<h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">Naročnine</h3>'
+    + '<button class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="showNarocnine()">Odpri</button></div>'
+    + '<div class="prog-ex-row" style="align-items:center"><span><b>Mesečni prihodek</b><br><span style="font-size:11.5px;color:var(--muted)">' + SLO_MESECI_POLNI[ovMonth] + ' ' + ovYear + '</span></span><span class="badge-ok">' + prihodek + ' €</span></div>'
+    + '<div class="prog-ex-row" style="align-items:center"><span style="min-width:0"><b>Zapadla plačila</b><br><span style="font-size:11.5px;color:var(--muted)">' + (zapadle.length ? zapadle.slice(0,3).map(function(r){ return escapeHtml(kratkoIme(r.c.ime)); }).join(', ') : 'ni zapadlih') + '</span></span><span class="' + (neplacano ? 'badge-bad' : 'badge-ok') + '">' + neplacano + ' €</span></div>'
+    + '<div class="prog-ex-row" style="align-items:center"><span style="min-width:0"><b>Poteče v 14 dneh</b><br><span style="font-size:11.5px;color:var(--muted)">' + (kmalu.length ? kmalu.slice(0,3).map(function(r){ return escapeHtml(kratkoIme(r.c.ime)); }).join(', ') : 'ni takih') + '</span></span><span class="badge-mid">' + kmalu.length + '</span></div>';
+}
+function renderOverviewProgress(){
+  const wrap = document.getElementById('ovProgressCard');
+  const danesIso = new Date().toISOString().slice(0,10);
+  const rows = clients.map(function(c){
+    const nacrt = koledarData.filter(function(k){ return k.stranka_id === c.id && k.datum < danesIso; });
+    const opr = nacrt.filter(function(k){ return jeOpravljen(k.stranka_id, k.program_id, k.datum); }).length;
+    const dosl = nacrt.length ? Math.round((opr / nacrt.length) * 100) : null;
+    const zadnji = opravljeniData.filter(function(t){ return t.stranka_id === c.id; }).map(function(t){ return t.datum; }).sort().pop();
+    const sprem = (c.zacetna_teza && c.trenutna_teza) ? Math.round((c.trenutna_teza - c.zacetna_teza) * 10) / 10 : null;
+    return { c: c, dosl: dosl, zadnji: zadnji, sprem: sprem };
+  });
+  const zDosl = rows.filter(function(r){ return r.dosl !== null; });
+  const povpr = zDosl.length ? Math.round(zDosl.reduce(function(a,r){ return a + r.dosl; }, 0) / zDosl.length) : null;
+  const head = '<thead><tr>' + ['Stranka','Cilj','Napredek','Zadnji trening','Doslednost'].map(function(h){ return '<th>' + h + '</th>'; }).join('') + '</tr></thead>';
+  const body = rows.length === 0 ? '<tbody><tr><td colspan="5" class="dim" style="padding:18px;text-align:center">Ni strank.</td></tr></tbody>'
+    : '<tbody>' + rows.map(function(r){
+        const cilj = (r.c.zacetna_teza && r.c.ciljna_teza) ? (r.c.zacetna_teza + ' → ' + r.c.ciljna_teza + ' kg') : (r.c.cilj ? escapeHtml(r.c.cilj) : '—');
+        const napredek = r.sprem === null ? '<span class="dim">—</span>'
+          : '<span class="' + (r.sprem <= 0 ? 'badge-ok' : 'badge-mid') + '">' + (r.sprem > 0 ? '+' : '') + r.sprem + ' kg</span>';
+        return '<tr onclick="openClientFromTable(\'' + r.c.id + '\')">'
+          + '<td><b>' + escapeHtml(r.c.ime) + '</b></td>'
+          + '<td>' + cilj + '</td>'
+          + '<td>' + napredek + '</td>'
+          + '<td>' + (r.zadnji ? formatShortDate(r.zadnji) : '—') + '</td>'
+          + '<td class="num">' + (r.dosl === null ? '—' : r.dosl + ' %') + '</td></tr>';
+      }).join('') + '</tbody>';
+  wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
+    + '<h3 style="font-family:\'Archivo\',sans-serif;font-weight:700;font-size:14px">Napredek proti cilju</h3>'
+    + (povpr === null ? '' : '<span class="badge-mid">povprečno ' + povpr + ' %</span>') + '</div>'
+    + '<div class="table-scroll"><table class="data-table">' + head + body + '</table></div>';
 }
 function showNarocnine(){
   hideAllScreens();
@@ -3623,6 +3951,7 @@ let clientCalMonth = new Date().getMonth();
 let clientCalSelectedDate = null;
 let clientKoledarData = [];
 let clientTerminiData = [];
+let clientOpravljeni = [];
 async function showClientKoledar(){
   stopClientChatPolling();
   hideAllClientScreens();
@@ -3640,11 +3969,18 @@ async function loadClientKoledarMonth(){
     const res = await fetch(SUPABASE_URL + '/rest/v1/koledar_treningi?stranka_id=eq.' + clientProfile.id + '&datum=gte.' + start + '&datum=lte.' + end + '&select=*,programi(id,ime)', { headers: authHeaders(), cache:'no-store' });
     clientKoledarData = res.ok ? await res.json() : [];
   }catch(e){ clientKoledarData = []; }
+  clientOpravljeni = [];
+  try{
+    const r = await fetch(SUPABASE_URL + '/rest/v1/treningi?stranka_id=eq.' + clientProfile.id + '&datum=gte.' + start + '&datum=lte.' + end + '&select=datum', { headers: authHeaders(), cache:'no-store' });
+    clientOpravljeni = r.ok ? (await r.json()).map(function(t){ return t.datum; }) : [];
+  }catch(e){ clientOpravljeni = []; }
   clientTerminiData = [];
   try{
     const res2 = await fetch(SUPABASE_URL + '/rest/v1/koledar_termini?trener_id=eq.' + clientProfile.trener_id + '&datum=gte.' + start + '&datum=lte.' + end + '&select=*', { headers: authHeaders(), cache:'no-store' });
     clientTerminiData = res2.ok ? await res2.json() : [];
   }catch(e){ clientTerminiData = []; }
+  const meta = document.getElementById('clientKoledarMeta');
+  if(meta) meta.textContent = clientKoledarData.length + ' načrtovanih treningov v ' + SLO_MESECI_MESTNIK[clientCalMonth];
   renderClientCalGrid();
   renderClientCalDayPanel();
 }
@@ -3662,19 +3998,22 @@ function renderClientCalGrid(){
   const daysInMonth = new Date(clientCalYear, clientCalMonth+1, 0).getDate();
   const danesIso = new Date().toISOString().slice(0,10);
   let html = '';
-  for(let i=0;i<startOffset;i++) html += '<div class="cal-cell empty"></div>';
+  const prevDays = new Date(clientCalYear, clientCalMonth, 0).getDate();
+  for(let i=startOffset;i>0;i--) html += '<div class="cal-day muted">' + (prevDays - i + 1) + '</div>';
   for(let d=1; d<=daysInMonth; d++){
     const iso = clientCalYear + '-' + String(clientCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
     const jeTrening = clientKoledarData.some(function(k){ return k.datum === iso; });
+    const opravljen = clientOpravljeni.indexOf(iso) > -1;
     const mojTermin = clientTerminiData.some(function(t){ return t.datum === iso && t.stranka_id === clientProfile.id; });
-    let cls = 'cal-cell';
-    if(iso === danesIso) cls += ' today';
-    if(iso === clientCalSelectedDate) cls += ' selected';
-    html += '<div class="' + cls + '" onclick="selectClientCalDay(\'' + iso + '\')"><div class="dnum">' + d + '</div>'
-      + (jeTrening ? '<span class="badge-mid">trening</span>' : '')
-      + (mojTermin ? '<span class="badge-ok">termin</span>' : '')
+    let cls = 'cal-day';
+    if(iso === clientCalSelectedDate) cls += ' on';
+    html += '<div class="' + cls + '" onclick="selectClientCalDay(\'' + iso + '\')"><span>' + d + '</span>'
+      + (jeTrening ? '<i' + (opravljen ? ' class="ok"' : '') + '></i>' : '')
+      + (mojTermin ? '<span class="n">termin</span>' : (jeTrening ? '<span class="n">trening</span>' : ''))
       + '</div>';
   }
+  const manjka = (7 - ((startOffset + daysInMonth) % 7)) % 7;
+  for(let i=1;i<=manjka;i++) html += '<div class="cal-day muted">' + i + '</div>';
   grid.innerHTML = html;
 }
 function selectClientCalDay(iso){
@@ -5169,10 +5508,10 @@ async function saveBranding(){
 }
 
 // ---------- ANALITIKA ----------
-async function renderNeedsAttention(){
-  const wrap = document.getElementById('needsAttentionList');
-  if(clients.length === 0){ wrap.innerHTML = ''; return; }
-  wrap.innerHTML = '<div class="empty" style="padding:14px 0">Preverjam…</div>';
+let attentionMap = {};
+async function loadAttentionData(){
+  attentionMap = {};
+  if(clients.length === 0) return;
   const ids = clients.map(function(c){ return c.id; }).join(',');
   try{
     const [progRes, msgRes, merRes] = await Promise.all([
@@ -5183,16 +5522,13 @@ async function renderNeedsAttention(){
     const progRows = progRes.ok ? await progRes.json() : [];
     const msgRows = msgRes.ok ? await msgRes.json() : [];
     const merRows = merRes.ok ? await merRes.json() : [];
-
     const progCount = {};
     progRows.forEach(function(r){ progCount[r.stranka_id] = (progCount[r.stranka_id] || 0) + 1; });
     const lastMsg = {};
     msgRows.forEach(function(r){ if(!lastMsg[r.stranka_id]) lastMsg[r.stranka_id] = r.poslano; });
     const lastMer = {};
     merRows.forEach(function(r){ if(!lastMer[r.stranka_id]) lastMer[r.stranka_id] = r.datum; });
-
     const now = Date.now();
-    const items = [];
     clients.forEach(function(c){
       const flags = [];
       if(!progCount[c.id]) flags.push('Brez programa');
@@ -5205,22 +5541,32 @@ async function renderNeedsAttention(){
       const daysMer = merDate ? Math.floor((now - new Date(merDate).getTime()) / 86400000) : null;
       if(daysMer === null) flags.push('Ni meritve teže');
       else if(daysMer > trenerjevPrag) flags.push('Meritev stara ' + daysMer + ' dni');
-      if(flags.length > 0) items.push({ client: c, flags: flags });
+      if(flags.length > 0) attentionMap[c.id] = flags;
     });
-
-    if(items.length === 0){
-      wrap.innerHTML = '<div class="empty" style="padding:14px 0">Nobena stranka trenutno ne potrebuje pozornosti — vse je urejeno ✓</div>';
-      return;
-    }
-    wrap.innerHTML = items.map(function(it){
-      const initials = it.client.ime.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
-      const flagsHtml = it.flags.map(function(f){ return '<span class="badge-bad">' + f + '</span>'; }).join('');
-      return '<div class="attn-card" onclick="openClientDetail(\'' + it.client.id + '\')">'
-        + '<div class="ini">' + escapeHtml(initials) + '</div>'
-        + '<div class="info"><b>' + escapeHtml(it.client.ime) + '</b><div class="attn-flags">' + flagsHtml + '</div></div>'
-        + '</div>';
-    }).join('');
-  }catch(err){ wrap.innerHTML = '<div class="empty" style="padding:14px 0">Napaka pri preverjanju.</div>'; }
+  }catch(e){}
+}
+function needsAttentionFlags(c){
+  return attentionMap[c.id] || [];
+}
+async function renderNeedsAttention(){
+  const wrap = document.getElementById('needsAttentionList');
+  if(!wrap) return;
+  if(clients.length === 0){ wrap.innerHTML = ''; return; }
+  wrap.innerHTML = '<div class="empty" style="padding:14px 0">Preverjam…</div>';
+  await loadAttentionData();
+  const items = clients.filter(function(c){ return needsAttentionFlags(c).length > 0; });
+  if(items.length === 0){
+    wrap.innerHTML = '<div class="empty" style="padding:14px 0">Nobena stranka trenutno ne potrebuje pozornosti — vse je urejeno ✓</div>';
+    return;
+  }
+  wrap.innerHTML = items.map(function(c){
+    const initials = c.ime.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
+    const flagsHtml = needsAttentionFlags(c).map(function(f){ return '<span class="badge-bad">' + f + '</span>'; }).join('');
+    return '<div class="attn-card" onclick="openClientDetail(\'' + c.id + '\')">'
+      + '<div class="ini">' + escapeHtml(initials) + '</div>'
+      + '<div class="info"><b>' + escapeHtml(c.ime) + '</b><div class="attn-flags">' + flagsHtml + '</div></div>'
+      + '</div>';
+  }).join('');
 }
 async function renderAnalitika(){
   renderNeedsAttention();
