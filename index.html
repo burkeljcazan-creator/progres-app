@@ -229,6 +229,11 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .pick-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:12.5px;cursor:pointer;margin:0 6px 6px 0}
 .pick-chip:hover{border-color:var(--primary-ink);background:var(--primary-soft)}
 .pick-chip.added{background:var(--ok-soft);border-color:var(--mint);color:var(--mint-strong)}
+#imgViewer{position:fixed;inset:0;background:rgba(9,20,32,.8);z-index:60;display:flex;align-items:center;justify-content:center;padding:24px}
+#imgViewer.hidden{display:none}
+.iv-panel{max-width:min(94vw,900px);display:flex;flex-direction:column;gap:12px}
+.iv-panel img{max-width:100%;max-height:78vh;border-radius:12px;display:block;background:var(--card)}
+.iv-bar{display:flex;gap:8px;justify-content:center}
 .cal-grid-head{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:2px}
 .cal-grid-head span{text-align:center;font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}
@@ -1169,6 +1174,16 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       </div>
     </div>
 
+  </div>
+</div>
+
+<div id="imgViewer" class="hidden" onclick="closeImageViewer(event)">
+  <div class="iv-panel" onclick="event.stopPropagation()">
+    <img id="ivImg" src="" alt="Priloga">
+    <div class="iv-bar">
+      <a id="ivDownload" class="btn-small" style="background:var(--primary-soft);color:var(--primary-ink);text-decoration:none" download="progres-slika.jpg">⤓ Prenesi</a>
+      <button class="btn-small" onclick="closeImageViewer()">Zapri</button>
+    </div>
   </div>
 </div>
 
@@ -5470,6 +5485,47 @@ function fixAudioDuration(audioEl){
     }
   });
 }
+function dataUrlVBlob(dataUrl){
+  const deli = dataUrl.split(',');
+  const mime = (deli[0].match(/:(.*?);/) || [])[1] || 'application/octet-stream';
+  const bin = atob(deli[1]);
+  const buf = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) buf[i] = bin.charCodeAt(i);
+  return new Blob([buf], { type: mime });
+}
+function prenesiDataUrl(dataUrl, ime){
+  try{
+    const url = URL.createObjectURL(dataUrlVBlob(dataUrl));
+    const a = document.createElement('a');
+    a.href = url; a.download = ime; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }catch(e){ toast('Prenos ni uspel.'); }
+}
+function prenesiPrilogo(el){
+  prenesiDataUrl(el.getAttribute('data-src'), el.getAttribute('data-ime') || 'datoteka');
+}
+function openImageViewer(src){
+  const v = document.getElementById('imgViewer');
+  document.getElementById('ivImg').src = src;
+  const dl = document.getElementById('ivDownload');
+  dl.href = '#';
+  dl.onclick = function(e){
+    e.preventDefault();
+    prenesiDataUrl(src, 'progres-slika-' + new Date().toISOString().slice(0,10) + '.jpg');
+  };
+  v.classList.remove('hidden');
+}
+function closeImageViewer(e){
+  if(e && e.target && e.target.closest && e.target.closest('.iv-panel')) return;
+  document.getElementById('imgViewer').classList.add('hidden');
+  document.getElementById('ivImg').src = '';
+}
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    const v = document.getElementById('imgViewer');
+    if(v && !v.classList.contains('hidden')) closeImageViewer();
+  }
+});
 function renderChatMessages(wrapId, msgs, myRole, doScroll){
   const wrap = document.getElementById(wrapId);
   if(!wrap) return;
@@ -5495,9 +5551,9 @@ function renderChatMessages(wrapId, msgs, myRole, doScroll){
     const tStr = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
     let body = '';
     if(m.tip === 'slika' && m.priloga_url){
-      body = '<img class="chat-attach-img" src="' + m.priloga_url + '" onclick="window.open(this.src,\'_blank\')" alt="Slika">';
+      body = '<img class="chat-attach-img" src="' + m.priloga_url + '" onclick="openImageViewer(this.src)" alt="Slika" style="cursor:zoom-in">';
     } else if(m.tip === 'dokument' && m.priloga_url){
-      body = '<a class="chat-attach-doc" href="' + m.priloga_url + '" download="' + escapeHtml(m.priloga_ime || 'datoteka') + '">'
+      body = '<a class="chat-attach-doc" href="#" onclick="event.preventDefault(); prenesiPrilogo(this)" data-src="' + m.priloga_url + '" data-ime="' + escapeHtml(m.priloga_ime || 'datoteka') + '">'
         + '<span class="doc-ic"><svg viewBox="0 0 24 24" width="16" height="16" style="stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span>'
         + '<span class="doc-name">' + escapeHtml(m.priloga_ime || 'Dokument') + '</span>'
         + '</a>';
