@@ -229,6 +229,46 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
 .pick-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:12.5px;cursor:pointer;margin:0 6px 6px 0}
 .pick-chip:hover{border-color:var(--primary-ink);background:var(--primary-soft)}
 .pick-chip.added{background:var(--ok-soft);border-color:var(--mint);color:var(--mint-strong)}
+/* --- nastavitve po predlogi --- */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.page-head h1{font-family:'Archivo',sans-serif;font-weight:800;font-size:24px;color:var(--ink)}
+.page-head .meta{font-size:13px;color:var(--muted);margin-top:4px}
+.set-layout{display:block}
+.set-nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:18px;padding-bottom:4px}
+.set-nav a{display:block;padding:9px 12px;border-radius:var(--r-sm,10px);font-family:'Inter',sans-serif;font-weight:600;font-size:12.5px;color:var(--muted);text-decoration:none;white-space:nowrap}
+.set-nav a:hover{background:var(--primary-soft);color:var(--primary-ink)}
+.set-nav a.on{background:var(--primary-soft);color:var(--primary-ink);font-weight:700}
+.sec-title{font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+.sec-title:first-child{margin-top:0}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-head h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:var(--ink)}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-top:1px solid var(--line)}
+.set-row:first-of-type{border-top:0}
+.set-row .lab{min-width:0}
+.set-row .lab b{display:block;font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;color:var(--ink)}
+.set-row .lab span{display:block;font-size:11.5px;line-height:1.5;color:var(--muted);margin-top:3px}
+.set-row .ctl{flex-shrink:0;display:flex;align-items:center;gap:8px}
+.input{width:100%;max-width:320px;border:1px solid var(--line);border-radius:var(--r-sm,10px);padding:10px 12px;font-family:'Inter',sans-serif;font-size:13px;background:var(--card);color:var(--ink)}
+.input:focus{outline:2px solid var(--primary);border-color:transparent}
+.btn-sm{width:auto;padding:9px 15px;font-size:13px}
+.btn-ghost{background:var(--primary-soft);color:var(--primary-ink)}
+.sw{width:42px;height:24px;border-radius:999px;background:var(--chart-track);border:0;padding:2px;cursor:pointer;display:flex;align-items:center;transition:background .15s;flex-shrink:0}
+.sw i{width:20px;height:20px;border-radius:50%;background:var(--card);display:block;box-shadow:0 1px 3px rgba(9,20,32,.25);transition:transform .15s}
+.sw.on{background:var(--primary)}
+.sw.on i{transform:translateX(18px)}
+.swatches{display:flex;gap:7px;flex-wrap:wrap}
+.swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.swatches button.on{border-color:var(--ink)}
+.danger-zone{border-color:var(--danger-soft)}
+.danger-zone .set-row{border-top-color:var(--danger-soft)}
+.badge{font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.badge-info{background:var(--primary-soft);color:var(--primary-ink)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{background:var(--danger-soft);color:var(--danger);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px}
+@media (min-width:1024px){
+  .set-layout{display:grid;grid-template-columns:186px 1fr;gap:22px;align-items:start}
+  .set-nav{position:sticky;top:24px;flex-direction:column;gap:2px;overflow:visible;margin-bottom:0}
+}
 #imgViewer{position:fixed;inset:0;background:rgba(9,20,32,.8);z-index:60;display:flex;align-items:center;justify-content:center;padding:24px}
 #imgViewer.hidden{display:none}
 .iv-panel{max-width:min(94vw,900px);display:flex;flex-direction:column;gap:12px}
@@ -918,163 +958,244 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       </button>
     </nav>
 
-    <!-- ===== EKRAN: NASTAVITVE (meni s podzavihki) ===== -->
+        <!-- ===== EKRAN: NASTAVITVE (po predlogi) ===== -->
     <div id="screenNastavitve" class="hidden">
-      <button class="back-btn" onclick="showClients()">← Nazaj</button>
-      <div class="sec-head"><h2>Nastavitve</h2></div>
-
-      <div class="toplevel-tabs" id="settingsSubTabs" style="margin-bottom:20px">
-        <button class="tt on" id="stabProfil" onclick="showSettingsSection('profil')">Profil</button>
-        <button class="tt" id="stabBranding" onclick="showSettingsSection('branding')">Branding</button>
-        <button class="tt" id="stabSplosno" onclick="showSettingsSection('splosno')">Splošno</button>
-        <button class="tt" id="stabStranke" onclick="showSettingsSection('stranke')">Stranke</button>
-        <button class="tt" id="stabDatoteke" onclick="showSettingsSection('datoteke')">Datoteke</button>
-        <button class="tt" id="stabObvestila" onclick="showSettingsSection('obvestila')">Obvestila</button>
+      <div class="page-head">
+        <div><h1>Nastavitve</h1><div class="meta">Račun, blagovna znamka, obvestila in privzete vrednosti za nove stranke</div></div>
       </div>
 
-      <!-- PROFIL -->
-      <div id="settingsSectionProfil" class="settings-section">
-        <div class="card">
-          <div class="field"><label>Ime</label><input type="text" id="profImeVal"></div>
-          <div class="field"><label>E-pošta</label><input type="text" id="profEmailVal" disabled style="background:#F4F6F5;color:var(--muted)"></div>
-          <button class="btn" id="profSaveBtn" onclick="saveProfileName()">Shrani ime</button>
-        </div>
-        <div class="sec-head"><h2 style="font-size:14.5px">Sprememba gesla</h2></div>
-        <div class="card">
-          <div class="field"><label>Novo geslo (vsaj 6 znakov)</label><input type="password" id="profNewPass"></div>
-          <div class="field"><label>Ponovi novo geslo</label><input type="password" id="profNewPass2"></div>
-          <button class="btn" id="profPassBtn" onclick="changePassword()">Spremeni geslo</button>
-        </div>
-        <div class="card">
-          <button class="btn" style="background:var(--danger-soft);color:var(--danger)" onclick="handleLogout()">Odjava</button>
-        </div>
-      </div>
+      <div class="set-layout">
+        <nav class="set-nav" id="setNav">
+          <a href="#s-racun" class="on">Račun</a>
+          <a href="#s-videz">Videz in blagovna znamka</a>
+          <a href="#s-obvestila">Obvestila</a>
+          <a href="#s-stranke">Privzeto za stranke</a>
+          <a href="#s-podatki">Podatki in izvoz</a>
+          <a href="#s-datoteke">Datoteke</a>
+          <a href="#s-nevarno">Nevarno območje</a>
+        </nav>
 
-      <!-- BRANDING -->
-      <div id="settingsSectionBranding" class="settings-section hidden">
-        <div id="brandPreviewBanner" style="background:var(--primary);border-radius:16px;padding:20px;margin-bottom:16px;color:var(--on-primary)">
-          <div style="display:flex;align-items:center;gap:14px">
-            <div id="brandPreviewIcon" style="width:54px;height:54px;border-radius:14px;background:rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:var(--on-primary);overflow:hidden;flex-shrink:0">TŽ</div>
-            <div>
-              <div id="brandPreviewName" style="font-family:'Archivo',sans-serif;font-weight:800;font-size:18px">Moj Coaching</div>
-              <div style="font-size:12px;opacity:.75">Predogled — stranke vidijo to</div>
+        <div>
+          <div class="sec-title">Račun</div>
+          <div class="card" id="s-racun">
+            <div class="card-head"><h3>Osebni podatki</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Ime in priimek</b><span>Prikazano strankam v klepetu in v glavi aplikacije.</span></div>
+              <div class="ctl"><input class="input" type="text" id="profImeVal" style="width:210px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>E-pošta</b><span>Za prijavo. Sprememba trenutno ni mogoča.</span></div>
+              <div class="ctl"><input class="input" type="text" id="profEmailVal" disabled style="width:210px;background:var(--bg);color:var(--muted)"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Telefon</b><span>Neobvezno · vidno le tebi.</span></div>
+              <div class="ctl"><input class="input" type="text" id="profTelefon" placeholder="031 234 567" style="width:150px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Kratek opis</b><span>Prikazan strankam ob prvi prijavi.</span></div>
+              <div class="ctl"><textarea class="input" id="profOpis" rows="2" style="width:260px" placeholder="npr. Trener za moč in prehrano, 8 let izkušenj."></textarea></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" id="profSaveBtn" onclick="saveProfileName()">Shrani profil</button></div>
             </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="field"><label>Ime aplikacije</label><input type="text" id="brandName" oninput="updateBrandPreview()" placeholder="npr. Ana Fit Coaching"></div>
-          <div class="field">
-            <label>Ikona</label>
-            <div style="display:flex;align-items:center;gap:12px">
-              <div id="brandIconPreview" style="width:56px;height:56px;border-radius:14px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:800;overflow:hidden;flex-shrink:0">TŽ</div>
-              <label style="display:inline-block;background:var(--primary-soft);color:var(--primary-ink);font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;padding:9px 15px;border-radius:9px;cursor:pointer">Naloži sliko<input type="file" accept="image/*" style="display:none" onchange="loadBrandIcon(this)"></label>
+
+          <div class="card" id="s-racun-geslo">
+            <div class="card-head"><h3>Varnost</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Novo geslo</b><span>Vsaj 6 znakov.</span></div>
+              <div class="ctl"><input class="input" type="password" id="profNewPass" style="width:170px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Ponovi novo geslo</b></div>
+              <div class="ctl"><input class="input" type="password" id="profNewPass2" style="width:170px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" id="profPassBtn" onclick="changePassword()">Spremeni geslo</button></div>
             </div>
           </div>
-          <div class="field">
-            <label>Barva</label>
-            <div id="brandColorPicker" style="display:flex;flex-wrap:wrap;gap:9px;margin-bottom:8px"></div>
-          </div>
-          <button class="btn" id="brandSaveBtn" onclick="saveBranding()">Shrani branding</button>
-        </div>
-      </div>
 
-      <!-- SPLOŠNO -->
-      <div id="settingsSectionSplosno" class="settings-section hidden">
-        <div class="sec-head"><h2 style="font-size:14.5px">Videz</h2></div>
-        <div class="card">
-          <div class="field">
-            <label>Tema</label>
-            <div style="display:flex;gap:8px">
-              <button class="btn-small" id="themeLightBtn" onclick="setTheme('light')" style="background:var(--primary-soft);color:var(--primary-ink)">☀️ Svetla</button>
-              <button class="btn-small" id="themeDarkBtn" onclick="setTheme('dark')">🌙 Temna</button>
+          <div class="sec-title">Videz in blagovna znamka</div>
+          <div class="card" id="s-videz">
+            <div class="card-head"><h3>Videz aplikacije</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Tema</b><span>Svetla ali temna — velja za to napravo.</span></div>
+              <div class="ctl"><div style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" id="themeLightBtn" onclick="setTheme('light')">Svetla</button>
+                <button class="btn btn-ghost btn-sm" id="themeDarkBtn" onclick="setTheme('dark')">Temna</button>
+              </div></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Vodilna barva</b><span>Uporabljena za gumbe, grafe in aktivna stanja.</span></div>
+              <div class="ctl"><div class="swatches" id="brandColorPicker"></div></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Ime blagovne znamke</b><span>Zamenja „Progres“ v glavi aplikacije stranke.</span></div>
+              <div class="ctl"><input class="input" type="text" id="brandName" oninput="updateBrandPreview()" style="width:170px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Logotip</b><span>Kvadratna slika, vsaj 128×128 px.</span></div>
+              <div class="ctl" style="gap:10px">
+                <div id="brandIconPreview" style="width:38px;height:38px;border-radius:10px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:var(--on-primary);font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;overflow:hidden;flex-shrink:0"></div>
+                <label class="btn btn-ghost btn-sm" style="cursor:pointer">Naloži<input type="file" accept="image/*" style="display:none" onchange="loadBrandIcon(this)"></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" id="brandSaveBtn" onclick="saveBranding()">Shrani znamko</button></div>
+            </div>
+            <div id="brandPreviewBanner" style="background:var(--primary);border-radius:12px;padding:16px;margin-top:14px;color:var(--on-primary);display:flex;align-items:center;gap:14px">
+              <div id="brandPreviewIcon" style="width:44px;height:44px;border-radius:12px;background:rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;overflow:hidden;flex-shrink:0"></div>
+              <div><div id="brandPreviewName" style="font-family:'Archivo',sans-serif;font-weight:800;font-size:16px">Progres</div>
+              <div style="font-size:11.5px;opacity:.75">Predogled — tako to vidijo stranke</div></div>
             </div>
           </div>
-        </div>
-        <div class="sec-head"><h2 style="font-size:14.5px">Opozorila</h2></div>
-        <div class="card">
-          <div class="field"><label>Po koliko dneh brez stika/meritve naj stranka postane "Potrebuje pozornost"?</label><input type="number" id="pragDniVal" placeholder="npr. 14"></div>
-          <button class="btn" id="pragSaveBtn" onclick="saveGeneralSettings()">Shrani</button>
-        </div>
-        <div class="sec-head"><h2 style="font-size:14.5px">Koledar</h2></div>
-        <div class="card">
-          <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
-            <input type="checkbox" id="terminiToggle" style="width:19px;height:19px;accent-color:var(--primary)"> Omogoči individualne termine v živo
-          </label>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Ko je vklopljeno, lahko v Koledarju dodajaš proste termine, stranke pa jih vidijo in si jih rezervirajo same.</p>
-          <button class="btn" id="terminiSaveBtn" onclick="saveGeneralSettings()">Shrani</button>
-        </div>
-      </div>
 
-      <!-- STRANKE (baza podatkov + privzete vrednosti) -->
-      <div id="settingsSectionStranke" class="settings-section hidden" style="max-width:none">
-        <div class="sec-head">
-          <h2 style="font-size:14.5px">Baza strank</h2>
-          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="exportClientsCsv()">⤓ Izvozi CSV</button>
-        </div>
-        <input type="text" id="clientTableSearch" placeholder="Išči po imenu, cilju, alergijah, poškodbah…" oninput="renderClientsTable()" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:12px">
-        <div class="table-scroll"><table class="data-table" id="clientsTable"></table></div>
-
-        <div class="sec-head" style="margin-top:28px"><h2 style="font-size:14.5px">Privzete vrednosti za nove stranke</h2></div>
-        <div class="card" style="max-width:520px">
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Te vrednosti se samodejno predizpolnijo, ko pri novi stranki prvič odpreš "Nastavi cilje" — še vedno jih lahko za vsako stranko posebej spremeniš.</p>
-          <div class="grid2">
-            <div class="field"><label>Privzete beljakovine — min (g/kg)</label><input type="number" step="0.1" id="privzBeljMin" placeholder="npr. 1.8"></div>
-            <div class="field"><label>Privzete beljakovine — max (g/kg)</label><input type="number" step="0.1" id="privzBeljMax" placeholder="npr. 2.2"></div>
+          <div class="sec-title">Obvestila</div>
+          <div class="card" id="s-obvestila">
+            <div class="card-head"><h3>Kdaj te obvestimo</h3></div>
+            <div class="note-box" style="margin-bottom:4px">Pošiljanje obvestil še ni vklopljeno — nastavitve se shranijo in bodo veljale, ko ga dodava.</div>
+            <div class="set-row">
+              <div class="lab"><b>Novo sporočilo stranke</b></div>
+              <div class="ctl"><button class="sw" id="obvSporocilo" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Stranka zaključi trening</b></div>
+              <div class="ctl"><button class="sw" id="obvTrening" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Nova meritev</b></div>
+              <div class="ctl"><button class="sw" id="obvMeritev" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Stranka brez vnosa</b><span>Pojavi se med „Potrebuje pozornost“ po pragu spodaj.</span></div>
+              <div class="ctl"><button class="sw" id="obvBrezVnosa" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Novo plačilo ali podaljšanje</b></div>
+              <div class="ctl"><button class="sw" id="obvPlacilo" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Naročnina poteče v 7 dneh</b></div>
+              <div class="ctl"><button class="sw" id="obvPotek" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Tišina</b><span>V tem času ne pošiljamo obvestil.</span></div>
+              <div class="ctl">
+                <input class="input" type="time" id="tihiOd" style="width:110px">
+                <span style="color:var(--muted)">–</span>
+                <input class="input" type="time" id="tihiDo" style="width:110px">
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" onclick="saveNotifTrener()">Shrani obvestila</button></div>
+            </div>
           </div>
-          <button class="btn" id="privzSaveBtn" onclick="saveGeneralSettings()">Shrani</button>
-        </div>
-      </div>
 
-      <!-- OBVESTILA -->
-      <!-- DATOTEKE -->
-      <div id="settingsSectionDatoteke" class="settings-section hidden" style="max-width:none">
-        <div class="sec-head">
-          <h2 style="font-size:14.5px">Učna gradiva in dokumenti</h2>
-          <button class="add-btn" style="font-size:12px;padding:7px 12px" onclick="toggleGradivoForm()">+ Naloži datoteko</button>
-        </div>
-
-        <div class="card hidden" id="gradivoForm" style="max-width:520px">
-          <div class="field"><label>Naziv *</label><input type="text" id="grNaziv" placeholder="npr. Vodnik po pravilni tehniki počepa"></div>
-          <div class="field"><label>Kratek opis (neobvezno)</label><input type="text" id="grOpis" placeholder="npr. za začetnike, 12 strani"></div>
-          <div class="field"><label>Kategorija</label>
-            <select id="grKategorija" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px">
-              <option value="splosno">Splošno</option>
-              <option value="trening">Trening</option>
-              <option value="prehrana">Prehrana</option>
-              <option value="predstavitev">Predstavitev</option>
-              <option value="obrazec">Obrazec / dokument</option>
-            </select>
+          <div class="sec-title">Privzeto za nove stranke</div>
+          <div class="card" id="s-stranke">
+            <div class="card-head"><h3>Kaj velja, dokler ne določiš drugače</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Privzeti cilj korakov</b></div>
+              <div class="ctl"><input class="input" type="number" id="privzKoraki" style="width:110px"><span style="color:var(--muted)">korakov</span></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Privzeti cilj spanja</b></div>
+              <div class="ctl"><input class="input" type="number" step="0.5" id="privzSpanje" style="width:80px"><span style="color:var(--muted)">ur</span></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Beljakovine na kg telesne teže</b><span>Uporabljeno za predlog dnevnega vnosa.</span></div>
+              <div class="ctl">
+                <input class="input" type="number" step="0.1" id="privzBeljMin" style="width:80px">
+                <span style="color:var(--muted)">–</span>
+                <input class="input" type="number" step="0.1" id="privzBeljMax" style="width:80px">
+                <span style="color:var(--muted)">g/kg</span>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Prag „Potrebuje pozornost“</b><span>Po koliko dneh brez stika ali meritve.</span></div>
+              <div class="ctl"><input class="input" type="number" id="pragDniVal" style="width:80px"><span style="color:var(--muted)">dni</span></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Individualni termini v živo</b><span>Stranke vidijo proste termine in si jih rezervirajo same.</span></div>
+              <div class="ctl"><label style="display:flex;align-items:center"><input type="checkbox" id="terminiToggle" style="width:19px;height:19px;accent-color:var(--primary)"></label></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" id="privzSaveBtn" onclick="saveGeneralSettings()">Shrani privzete vrednosti</button></div>
+            </div>
           </div>
-          <div class="field">
-            <label>Datoteka (največ 50 MB)</label>
-            <input type="file" id="grDatoteka" accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.mp4,.mov" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13px;background:var(--card)">
+
+          <div class="sec-title">Podatki in izvoz</div>
+          <div class="card" id="s-podatki">
+            <div class="card-head"><h3>Izvoz</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Izvoz strank (CSV)</b><span>Imena, cilji, telesni podatki in naročnine.</span></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="exportClientsCsv()">Prenesi</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Izvoz naročnin (CSV)</b><span>Paketi, način plačila in stanje.</span></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="exportNarocnineCsv()">Prenesi</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Baza strank</b><span>Pregledna tabela z iskalnikom.</span></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="toggleClientsTable()">Pokaži tabelo</button></div>
+            </div>
+            <div id="clientsTableWrap" class="hidden" style="margin-top:14px">
+              <input type="text" id="clientTableSearch" placeholder="Išči po imenu, cilju, alergijah…" oninput="renderClientsTable()" class="input" style="max-width:none;margin-bottom:12px">
+              <div class="table-scroll"><table class="data-table" id="clientsTable"></table></div>
+            </div>
           </div>
-          <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
-            <input type="checkbox" id="grDeljeno" checked style="width:19px;height:19px;accent-color:var(--primary-ink)"> Vidno strankam
-          </label>
-          <button class="btn" id="grSaveBtn" onclick="uploadGradivo()">Naloži</button>
-        </div>
 
-        <div id="gradivaList" style="margin-bottom:28px"></div>
+          <div class="sec-title">Datoteke</div>
+          <div class="card" id="s-datoteke">
+            <div class="card-head"><h3>Učna gradiva</h3><button class="btn btn-sm" onclick="toggleGradivoForm()">+ Naloži</button></div>
+            <div class="card hidden" id="gradivoForm" style="box-shadow:none;border:1px solid var(--line);margin-bottom:12px">
+              <div class="field"><label>Naziv *</label><input type="text" id="grNaziv" placeholder="npr. Vodnik po pravilni tehniki počepa"></div>
+              <div class="field"><label>Kratek opis (neobvezno)</label><input type="text" id="grOpis" placeholder="npr. za začetnike, 12 strani"></div>
+              <div class="field"><label>Kategorija</label>
+                <select id="grKategorija" class="input">
+                  <option value="splosno">Splošno</option>
+                  <option value="trening">Trening</option>
+                  <option value="prehrana">Prehrana</option>
+                  <option value="predstavitev">Predstavitev</option>
+                  <option value="obrazec">Obrazec / dokument</option>
+                </select>
+              </div>
+              <div class="field"><label>Datoteka (največ 50 MB)</label>
+                <input type="file" id="grDatoteka" accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.mp4,.mov" class="input">
+              </div>
+              <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:14px">
+                <input type="checkbox" id="grDeljeno" checked style="width:19px;height:19px;accent-color:var(--primary)"> Vidno strankam
+              </label>
+              <button class="btn" id="grSaveBtn" onclick="uploadGradivo()">Naloži</button>
+            </div>
+            <div id="gradivaList"></div>
+            <div class="card-head" style="margin-top:20px"><h3>Slike obrokov</h3></div>
+            <div id="filesMealImages"></div>
+            <div class="card-head" style="margin-top:20px"><h3>Video povezave vaj</h3></div>
+            <div id="filesExerciseVideos"></div>
+          </div>
 
-        <div class="sec-head"><h2 style="font-size:14.5px">Slike obrokov</h2></div>
-        <div id="filesMealImages" style="margin-bottom:28px"></div>
-
-        <div class="sec-head"><h2 style="font-size:14.5px">Video povezave vaj</h2></div>
-        <div id="filesExerciseVideos"></div>
-      </div>
-
-      <div id="settingsSectionObvestila" class="settings-section hidden">
-        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div>
-            <div style="font-size:13.5px;font-weight:600;margin-bottom:3px">⏳ Na voljo kmalu</div>
-            <div style="font-size:12px;color:var(--muted)">E-poštna obvestila (novo sporočilo stranke, nova naročnina ipd.) zahtevajo dodatno tehnično nastavitev na strežniški strani.</div>
+          <div class="sec-title">Nevarno območje</div>
+          <div class="card danger-zone" id="s-nevarno">
+            <div class="set-row">
+              <div class="lab"><b>Odjava</b><span>Odjava iz te naprave.</span></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="handleLogout()">Odjava</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Izbris računa</b><span>Trajno izbriše vse stranke, programe in sporočila. Zaenkrat le prek podpore.</span></div>
+              <div class="ctl"><button class="btn btn-sm" style="background:var(--danger-soft);color:var(--danger)" onclick="toast('Za izbris računa piši na podporo — samodejni izbris še ni na voljo.')">Izbriši račun</button></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ===== EKRAN: KOLEDAR ===== -->
+<!-- ===== EKRAN: KOLEDAR ===== -->
     <div id="screenKoledar" class="hidden">
       <div class="danes-head">
         <div><h1>Koledar</h1><div class="meta" id="koledarMeta"></div></div>
@@ -1396,40 +1517,170 @@ h1,h2,h3{font-family:'Archivo',sans-serif}
       <div id="clientGradivaList"></div>
     </div>
 
-    <div id="clientScreenNastavitve" class="hidden">
-      <div class="client-header">
-        <h2>Nastavitve</h2>
-        <div class="meta">Tvoj račun in videz aplikacije</div>
+        <div id="clientScreenNastavitve" class="hidden">
+      <div class="page-head">
+        <div><h1>Nastavitve</h1><div class="meta">Tvoj račun, videz aplikacije in kaj deliš s trenerjem</div></div>
       </div>
-      <div class="card" style="max-width:520px">
-        <div class="field"><label>Ime</label><input type="text" id="cnIme"></div>
-        <div class="field"><label>E-pošta</label><input type="text" id="cnEmail" disabled style="background:var(--bg);color:var(--muted)"></div>
-        <button class="btn" id="cnImeBtn" onclick="saveClientProfileName()">Shrani ime</button>
-      </div>
-      <div class="sec-head"><h2 style="font-size:14.5px">Sprememba gesla</h2></div>
-      <div class="card" style="max-width:520px">
-        <div class="field"><label>Novo geslo (vsaj 6 znakov)</label><input type="password" id="cnPass1"></div>
-        <div class="field"><label>Ponovi novo geslo</label><input type="password" id="cnPass2"></div>
-        <button class="btn" id="cnPassBtn" onclick="changeClientPassword()">Spremeni geslo</button>
-      </div>
-      <div class="sec-head"><h2 style="font-size:14.5px">Videz</h2></div>
-      <div class="card" style="max-width:520px">
-        <div style="display:flex;gap:8px">
-          <button class="btn-small" id="cThemeLightBtn" onclick="setTheme('light')">☀️ Svetla</button>
-          <button class="btn-small" id="cThemeDarkBtn" onclick="setTheme('dark')">🌙 Temna</button>
+
+      <div class="set-layout">
+        <nav class="set-nav">
+          <a href="#c-racun" class="on">Račun</a>
+          <a href="#c-videz">Videz</a>
+          <a href="#c-obvestila">Obvestila</a>
+          <a href="#c-cilji">Cilji in enote</a>
+          <a href="#c-podatki">Moji podatki</a>
+          <a href="#c-narocnina">Naročnina</a>
+          <a href="#c-nevarno">Nevarno območje</a>
+        </nav>
+
+        <div>
+          <div class="sec-title">Račun</div>
+          <div class="card" id="c-racun">
+            <div class="card-head"><h3>Osebni podatki</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Ime</b></div>
+              <div class="ctl"><input class="input" type="text" id="cnIme" style="width:170px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>E-pošta</b><span>Za prijavo. Sprememba trenutno ni mogoča.</span></div>
+              <div class="ctl"><input class="input" type="text" id="cnEmail" disabled style="width:210px;background:var(--bg);color:var(--muted)"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" id="cnImeBtn" onclick="saveClientProfileName()">Shrani ime</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Novo geslo</b><span>Vsaj 6 znakov.</span></div>
+              <div class="ctl"><input class="input" type="password" id="cnPass1" style="width:170px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Ponovi novo geslo</b></div>
+              <div class="ctl"><input class="input" type="password" id="cnPass2" style="width:170px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" id="cnPassBtn" onclick="changeClientPassword()">Spremeni geslo</button></div>
+            </div>
+          </div>
+
+          <div class="sec-title">Videz</div>
+          <div class="card" id="c-videz">
+            <div class="card-head"><h3>Videz aplikacije</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Tema</b><span>Velja za to napravo.</span></div>
+              <div class="ctl"><div style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" id="cThemeLightBtn" onclick="setTheme('light')">Svetla</button>
+                <button class="btn btn-ghost btn-sm" id="cThemeDarkBtn" onclick="setTheme('dark')">Temna</button>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="sec-title">Obvestila</div>
+          <div class="card" id="c-obvestila">
+            <div class="card-head"><h3>Kdaj te opomnimo</h3></div>
+            <div class="note-box" style="margin-bottom:4px">Pošiljanje obvestil še ni vklopljeno — nastavitve se shranijo in bodo veljale, ko ga trener doda.</div>
+            <div class="set-row">
+              <div class="lab"><b>Opomnik za trening</b><span>Zjutraj na dan, ko imaš trening.</span></div>
+              <div class="ctl"><button class="sw" id="cObvTrening" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Čas jutranjega opomnika</b></div>
+              <div class="ctl"><input class="input" type="time" id="cObvTreningUra" style="width:110px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Opomnik za dnevni vnos</b><span>Kalorije, koraki in spanje — zvečer.</span></div>
+              <div class="ctl"><button class="sw" id="cObvVnos" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Čas večernega opomnika</b></div>
+              <div class="ctl"><input class="input" type="time" id="cObvVnosUra" style="width:110px"></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Novo sporočilo trenerja</b></div>
+              <div class="ctl"><button class="sw" id="cObvSporocilo" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Nov program ali obrok</b></div>
+              <div class="ctl"><button class="sw" id="cObvProgram" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Naročnina poteče čez 7 dni</b></div>
+              <div class="ctl"><button class="sw" id="cObvPotek" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Tedenski povzetek napredka</b><span>Vsako nedeljo zvečer, skupaj z vpisom teže.</span></div>
+              <div class="ctl"><button class="sw" id="cObvTedenski" onclick="toggleSw(this)" role="switch"><i></i></button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b></b></div>
+              <div class="ctl"><button class="btn btn-sm" onclick="saveNotifStranka()">Shrani obvestila</button></div>
+            </div>
+          </div>
+
+          <div class="sec-title">Cilji in enote</div>
+          <div class="card" id="c-cilji">
+            <div class="card-head"><h3>Kaj meriš</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Enote</b><span>Aplikacija uporablja kg in cm.</span></div>
+              <div class="ctl"><span class="badge badge-info">kg / cm</span></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Cilj korakov</b><span>Določa trener.</span></div>
+              <div class="ctl"><span class="badge badge-info" id="cCiljKoraki">—</span></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Cilj spanja</b><span>Določa trener.</span></div>
+              <div class="ctl"><span class="badge badge-info" id="cCiljSpanje">—</span></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Kalorije in beljakovine</b><span>Določa trener — spremembo predlagaj v klepetu.</span></div>
+              <div class="ctl"><span class="badge badge-info" id="cCiljPrehrana">—</span></div>
+            </div>
+          </div>
+
+          <div class="sec-title">Moji podatki</div>
+          <div class="card" id="c-podatki">
+            <div class="card-head"><h3>Kaj o tebi ve trener</h3></div>
+            <div class="set-row">
+              <div class="lab"><b>Alergije, poškodbe in zdravstvena stanja</b><span>Upoštevano pri programih in jedilniku.</span></div>
+              <div class="ctl"><div class="tags" style="margin:0" id="cMojiTagi"></div></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Uvodni vprašalnik</b><span>Cilj, teže, aktivnost in prehranske omejitve.</span></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="openQuestionnaireFromSettings()">Odpri vprašalnik</button></div>
+            </div>
+          </div>
+
+          <div class="sec-title">Naročnina</div>
+          <div class="card" id="c-narocnina">
+            <div class="card-head"><h3>Tvoj paket</h3></div>
+            <div id="cNarocninaInfo"></div>
+            <div class="set-row">
+              <div class="lab"><b>Vsi paketi</b><span>Poglej, kaj še ponuja trener.</span></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="showClientNarocnina()">Odpri</button></div>
+            </div>
+          </div>
+
+          <div class="sec-title">Nevarno območje</div>
+          <div class="card danger-zone" id="c-nevarno">
+            <div class="set-row">
+              <div class="lab"><b>Izvoz mojih podatkov</b><span>Meritve in treningi v datoteki CSV.</span></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="exportMyDataCsv()">Prenesi</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Odjava</b></div>
+              <div class="ctl"><button class="btn btn-ghost btn-sm" onclick="handleLogout()">Odjava</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Izbris računa</b><span>Trajno izbriše vse tvoje podatke. Zaenkrat le prek trenerja.</span></div>
+              <div class="ctl"><button class="btn btn-sm" style="background:var(--danger-soft);color:var(--danger)" onclick="toast('Za izbris računa piši trenerju — samodejni izbris še ni na voljo.')">Izbriši račun</button></div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="sec-head"><h2 style="font-size:14.5px">Moji podatki</h2></div>
-      <div class="card" style="max-width:520px">
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Cilj, teže, alergije, število obrokov in ostalo iz uvodnega vprašalnika.</p>
-        <button class="btn" style="background:var(--primary-soft);color:var(--primary-ink)" onclick="openQuestionnaireFromSettings()">Ponovno izpolni vprašalnik</button>
-      </div>
-      <div class="card" style="max-width:520px;margin-top:24px">
-        <button class="btn" style="background:var(--danger-soft);color:var(--danger)" onclick="handleLogout()">Odjava</button>
       </div>
     </div>
 
-    <nav class="bottom-nav" id="clientBottomNav">
+<nav class="bottom-nav" id="clientBottomNav">
       <button class="bn-item on" id="bnDanes" onclick="showClientDanes()">
         <svg viewBox="0 0 24 24" width="19" height="19"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
         <span>Danes</span>
@@ -1713,6 +1964,9 @@ async function enterApp(){
       document.getElementById('clientAvatarInitials').textContent = zac;
       document.getElementById('clientSideInitials').textContent = zac;
       document.getElementById('clientSideName').textContent = clientProfile.ime;
+      fetch(SUPABASE_URL + '/rest/v1/paketi?trener_id=eq.' + clientProfile.trener_id + '&select=*', { headers: authHeaders() })
+        .then(function(r){ return r.ok ? r.json() : []; })
+        .then(function(rows){ clientPaketiCache = rows; }).catch(function(){});
       await loadClientOwnPrograms();
       showClientDanes();
       return;
@@ -2472,27 +2726,69 @@ function openSettingsMenu(){
   const snN = document.getElementById('snNastavitve'); if(snN) snN.classList.add('on');
   document.getElementById('screenNastavitve').classList.remove('hidden');
   document.getElementById('topTabs').classList.add('hidden');
-  showSettingsSection('profil');
+  initSetNav('#screenNastavitve .set-nav');
   loadBrandingForm();
   loadSettingsData();
+  loadGradiva();
+  renderFileInventory();
 }
-function showSettingsSection(name){
-  ['profil','branding','splosno','stranke','datoteke','obvestila'].forEach(function(s){
-    document.getElementById('settingsSection' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('hidden', s !== name);
-    document.getElementById('stab' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('on', s === name);
+function toggleSw(btn){
+  btn.classList.toggle('on');
+  btn.setAttribute('aria-checked', btn.classList.contains('on') ? 'true' : 'false');
+}
+function setSw(id, val){
+  const b = document.getElementById(id);
+  if(!b) return;
+  b.classList.toggle('on', !!val);
+  b.setAttribute('aria-checked', val ? 'true' : 'false');
+}
+function getSw(id){
+  const b = document.getElementById(id);
+  return !!(b && b.classList.contains('on'));
+}
+function initSetNav(navSel){
+  const nav = document.querySelector(navSel);
+  if(!nav) return;
+  nav.querySelectorAll('a').forEach(function(a){
+    a.onclick = function(e){
+      e.preventDefault();
+      nav.querySelectorAll('a').forEach(function(x){ x.classList.remove('on'); });
+      a.classList.add('on');
+      const el = document.querySelector(a.getAttribute('href'));
+      if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+    };
   });
-  if(name === 'stranke'){
+}
+function toggleClientsTable(){
+  const w = document.getElementById('clientsTableWrap');
+  w.classList.toggle('hidden');
+  if(!w.classList.contains('hidden')){
     if(paketi.length === 0){ loadPaketi().then(renderClientsTable); } else { renderClientsTable(); }
   }
-  if(name === 'datoteke'){
-    loadGradiva();
-    renderFileInventory();
-  }
+}
+async function saveNotifTrener(){
+  try{
+    const payload = {
+      obv_novo_sporocilo: getSw('obvSporocilo'),
+      obv_zakljucen_trening: getSw('obvTrening'),
+      obv_nova_meritev: getSw('obvMeritev'),
+      obv_brez_vnosa: getSw('obvBrezVnosa'),
+      obv_placilo: getSw('obvPlacilo'),
+      obv_potek_narocnine: getSw('obvPotek'),
+      tihi_od: document.getElementById('tihiOd').value || null,
+      tihi_do: document.getElementById('tihiDo').value || null
+    };
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id, {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju obvestil.');
+    toast('Obvestila shranjena ✓');
+  }catch(err){ toast(err.message); }
 }
 async function loadSettingsData(){
   document.getElementById('profEmailVal').value = (session.user && session.user.email) || '';
   try{
-    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=ime,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg,omogoci_termine', { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=*', { headers: authHeaders(), cache: 'no-store' });
     const rows = res.ok ? await res.json() : [];
     const t = rows[0];
     if(t){
@@ -2505,6 +2801,18 @@ async function loadSettingsData(){
       document.getElementById('terminiToggle').checked = trenerjevTermini;
       document.getElementById('privzBeljMin').value = privzBeljMinGlobal || '';
       document.getElementById('privzBeljMax').value = privzBeljMaxGlobal || '';
+      document.getElementById('profTelefon').value = t.telefon || '';
+      document.getElementById('profOpis').value = t.opis || '';
+      document.getElementById('privzKoraki').value = t.privzeti_koraki || 10000;
+      document.getElementById('privzSpanje').value = t.privzeto_spanje || 8;
+      document.getElementById('tihiOd').value = t.tihi_od || '22:00';
+      document.getElementById('tihiDo').value = t.tihi_do || '07:00';
+      setSw('obvSporocilo', t.obv_novo_sporocilo !== false);
+      setSw('obvTrening', t.obv_zakljucen_trening !== false);
+      setSw('obvMeritev', t.obv_nova_meritev !== false);
+      setSw('obvBrezVnosa', t.obv_brez_vnosa !== false);
+      setSw('obvPlacilo', t.obv_placilo !== false);
+      setSw('obvPotek', t.obv_potek_narocnine !== false);
     }
   }catch(e){}
 }
@@ -2515,13 +2823,18 @@ async function saveProfileName(){
   btn.disabled = true; btn.textContent = 'Shranjujem...';
   try{
     const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id, {
-      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ ime: ime })
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify({
+        ime: ime,
+        telefon: document.getElementById('profTelefon').value.trim() || null,
+        opis: document.getElementById('profOpis').value.trim() || null
+      })
     });
-    if(!res.ok) throw new Error('Napaka pri shranjevanju imena.');
+    if(!res.ok) throw new Error('Napaka pri shranjevanju profila.');
     document.getElementById('whoName').textContent = ime;
-    toast('Ime shranjeno ✓');
+    document.getElementById('trainerSideName').textContent = ime;
+    toast('Profil shranjen ✓');
   }catch(err){ toast(err.message); }
-  finally{ btn.disabled = false; btn.textContent = 'Shrani ime'; }
+  finally{ btn.disabled = false; btn.textContent = 'Shrani profil'; }
 }
 async function changePassword(){
   const p1 = document.getElementById('profNewPass').value;
@@ -2606,6 +2919,8 @@ async function saveGeneralSettings(){
       prag_pozornosti_dni: document.getElementById('pragDniVal').value ? parseInt(document.getElementById('pragDniVal').value) : 14,
       privzeto_beljakovine_min_gkg: document.getElementById('privzBeljMin').value ? parseFloat(document.getElementById('privzBeljMin').value) : null,
       privzeto_beljakovine_max_gkg: document.getElementById('privzBeljMax').value ? parseFloat(document.getElementById('privzBeljMax').value) : null,
+      privzeti_koraki: document.getElementById('privzKoraki').value ? parseInt(document.getElementById('privzKoraki').value) : null,
+      privzeto_spanje: document.getElementById('privzSpanje').value ? parseFloat(document.getElementById('privzSpanje').value) : null,
       omogoci_termine: document.getElementById('terminiToggle').checked
     };
     const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id, {
@@ -4175,9 +4490,89 @@ function showClientNastavitve(){
   hideAllClientScreens();
   document.getElementById('clientScreenNastavitve').classList.remove('hidden');
   const sn = document.getElementById('snNastavitveC'); if(sn) sn.classList.add('on');
-  document.getElementById('cnIme').value = (clientProfile && clientProfile.ime) || '';
+  initSetNav('#clientScreenNastavitve .set-nav');
+  const c = clientProfile || {};
+  document.getElementById('cnIme').value = c.ime || '';
   document.getElementById('cnEmail').value = (session.user && session.user.email) || '';
   setTheme(localStorage.getItem('progres_theme') || 'light');
+
+  setSw('cObvTrening', c.obv_trening !== false);
+  setSw('cObvVnos', c.obv_dnevni_vnos !== false);
+  setSw('cObvSporocilo', c.obv_sporocilo !== false);
+  setSw('cObvProgram', c.obv_nov_program !== false);
+  setSw('cObvPotek', c.obv_potek !== false);
+  setSw('cObvTedenski', c.obv_tedenski === true);
+  document.getElementById('cObvTreningUra').value = c.obv_trening_ura || '07:00';
+  document.getElementById('cObvVnosUra').value = c.obv_dnevni_vnos_ura || '20:00';
+
+  document.getElementById('cCiljKoraki').textContent = c.cilj_koraki ? (c.cilj_koraki + ' korakov') : 'ni določen';
+  document.getElementById('cCiljSpanje').textContent = c.cilj_spanje_ure ? (c.cilj_spanje_ure + ' ur') : 'ni določen';
+  const pr = proteinRange(c);
+  document.getElementById('cCiljPrehrana').textContent =
+    (c.cilj_kcal ? c.cilj_kcal + ' kcal' : 'kcal ni določen') + (pr ? ' · ' + pr.min + '–' + pr.max + ' g' : '');
+
+  const tagi = [];
+  [c.alergije, c.poskodbe, c.bolezni].forEach(function(v){
+    (v || '').split(',').forEach(function(t){ if(t.trim()) tagi.push(t.trim()); });
+  });
+  document.getElementById('cMojiTagi').innerHTML = tagi.length
+    ? tagi.map(function(t){ return '<span class="tag">' + escapeHtml(t) + '</span>'; }).join('')
+    : '<span style="font-size:12px;color:var(--muted)">Nič vnesenega</span>';
+
+  const st = narocninaStatusStranka(c);
+  document.getElementById('cNarocninaInfo').innerHTML =
+    '<div class="set-row"><div class="lab"><b>Paket</b><span>' + st.pod + '</span></div>'
+    + '<div class="ctl"><span class="badge ' + st.cls + '">' + st.txt + '</span></div></div>';
+}
+function narocninaStatusStranka(c){
+  if(!c.paket_id) return { txt:'Brez paketa', cls:'badge-info', pod:'Trener ti ga še ni dodelil.' };
+  const ime = paketImeStranka(c.paket_id);
+  const pod = c.placano_do ? ('Velja do ' + c.placano_do) : ((c.nacin_placila === 'app') ? 'Čaka na plačilo' : 'Dogovor s trenerjem');
+  const veljaven = c.placano && (!c.placano_do || c.placano_do >= new Date().toISOString().slice(0,10));
+  return { txt: ime, cls: veljaven ? 'badge-ok' : 'badge-bad', pod: pod };
+}
+let clientPaketiCache = [];
+function paketImeStranka(id){
+  const p = clientPaketiCache.find(function(x){ return x.id === id; });
+  return p ? (p.ime + (p.cena ? ' · ' + p.cena + ' € / mes.' : '')) : 'Paket';
+}
+async function saveNotifStranka(){
+  try{
+    const payload = {
+      obv_trening: getSw('cObvTrening'),
+      obv_dnevni_vnos: getSw('cObvVnos'),
+      obv_sporocilo: getSw('cObvSporocilo'),
+      obv_nov_program: getSw('cObvProgram'),
+      obv_potek: getSw('cObvPotek'),
+      obv_tedenski: getSw('cObvTedenski'),
+      obv_trening_ura: document.getElementById('cObvTreningUra').value || null,
+      obv_dnevni_vnos_ura: document.getElementById('cObvVnosUra').value || null
+    };
+    const res = await fetch(SUPABASE_URL + '/rest/v1/stranke?id=eq.' + clientProfile.id, {
+      method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju obvestil.');
+    const vrnjeno = await res.json();
+    if(!vrnjeno || vrnjeno.length === 0) throw new Error('Shranjevanje je bilo zavrnjeno. Sporoči trenerju, da zažene migracijo 35.');
+    clientProfile = vrnjeno[0];
+    toast('Obvestila shranjena ✓');
+  }catch(err){ toast(err.message); }
+}
+async function exportMyDataCsv(){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/meritve?stranka_id=eq.' + clientProfile.id + '&select=*&order=datum.asc', { headers: authHeaders(), cache:'no-store' });
+    const rows = res.ok ? await res.json() : [];
+    const lines = ['Datum;Teza kg;Koraki;Spanje ur;Kalorije;Opomba'];
+    rows.forEach(function(m){
+      lines.push([m.datum, m.teza||'', m.koraki||'', m.spanje_ure||'', m.kcal_zauzito||'', (m.opomba||'').replace(/;/g,',')].join(';'));
+    });
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'moji-podatki-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+    URL.revokeObjectURL(url);
+    toast('Podatki izvoženi ✓');
+  }catch(err){ toast('Napaka pri izvozu.'); }
 }
 async function saveClientProfileName(){
   const btn = document.getElementById('cnImeBtn');
@@ -4564,6 +4959,7 @@ async function loadClientPaketi(){
     const res = await fetch(SUPABASE_URL + '/rest/v1/paketi?trener_id=eq.' + clientProfile.trener_id + '&select=*&order=vrstni_red.asc', { headers: authHeaders() });
     if(!res.ok) throw new Error('Napaka pri nalaganju paketov.');
     const rows = await res.json();
+    clientPaketiCache = rows;
     if(rows.length === 0){ wrap.innerHTML = '<div class="empty">Trener še ni objavil nobenega paketa.</div>'; return; }
     wrap.innerHTML = rows.map(function(p){
       const funkcijeHtml = (p.funkcije || '').split('\n').filter(function(f){ return f.trim(); }).map(function(f){
@@ -5885,8 +6281,8 @@ function renderBrandColorPicker(){
   const wrap = document.getElementById('brandColorPicker');
   wrap.innerHTML = BRAND_BARVE.map(function(c){
     const sel = c === brandColor;
-    return '<div onclick="pickBrandColor(\''+c+'\')" style="width:38px;height:38px;border-radius:10px;background:'+c+';cursor:pointer;box-shadow:'+(sel?'0 0 0 2px #fff, 0 0 0 4px '+c:'none')+'"></div>';
-  }).join('') + '<label style="width:38px;height:38px;border-radius:10px;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">+<input type="color" value="'+brandColor+'" style="opacity:0;width:0;height:0" oninput="pickBrandColor(this.value)"></label>';
+    return '<button class="' + (sel ? 'on' : '') + '" onclick="pickBrandColor(\''+c+'\')" style="background:'+c+'" title="'+c+'"></button>';
+  }).join('') + '<label class="swatches" style="width:26px;height:26px;border-radius:50%;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);cursor:pointer;display:flex;align-items:center;justify-content:center"><input type="color" value="'+brandColor+'" style="opacity:0;width:0;height:0" oninput="pickBrandColor(this.value)"></label>';
 }
 function pickBrandColor(c){ brandColor = c; renderBrandColorPicker(); updateBrandPreview(); }
 function loadBrandIcon(input){
