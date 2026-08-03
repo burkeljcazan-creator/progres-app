@@ -2926,7 +2926,7 @@ function applyPaleta(kljuc){
   const dark = document.body.classList.contains('dark-theme');
   const o = dark ? p.dark : p.light;
   const accent2 = o.accent2 || p.accent2;
-  const root = document.documentElement.style;
+  const root = document.body.style;
   root.setProperty('--bg', o.bg);
   root.setProperty('--card', o.card);
   root.setProperty('--ink', o.ink);
