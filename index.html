@@ -993,6 +993,7 @@ input,select,textarea{background:var(--field);color:var(--ink);border:1px solid 
           <a href="#s-stranke">Privzeto za stranke</a>
           <a href="#s-podatki">Podatki in izvoz</a>
           <a href="#s-datoteke">Datoteke</a>
+          <a href="#s-narocnina">Moja naročnina</a>
           <a href="#s-nevarno">Nevarno območje</a>
         </nav>
 
@@ -1204,6 +1205,21 @@ input,select,textarea{background:var(--field);color:var(--ink);border:1px solid 
             <div id="filesMealImages"></div>
             <div class="card-head" style="margin-top:20px"><h3>Video povezave vaj</h3></div>
             <div id="filesExerciseVideos"></div>
+          </div>
+
+          <div class="sec-title">Moja naročnina</div>
+          <div class="card" id="s-narocnina">
+            <div class="card-head"><h3>Stopnja Progresa</h3></div>
+            <div id="mojaNarocninaStanje" style="margin-bottom:16px"></div>
+            <div class="set-row">
+              <div class="lab"><b>Trener</b><span>30 € / mesec · do 30 strank</span></div>
+              <div class="ctl"><button class="btn btn-sm" onclick="window.open(nadgradiUrl('trener'),'_blank')">Nadgradi</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lab"><b>Studio</b><span>63 € / mesec · do 70 strank</span></div>
+              <div class="ctl"><button class="btn btn-sm" onclick="window.open(nadgradiUrl('studio'),'_blank')">Nadgradi</button></div>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-top:10px">Nad 70 strank piši na <a href="mailto:zivjo@progres.si" style="color:inherit;text-decoration:underline">zivjo@progres.si</a> za dogovor po meri.</p>
           </div>
 
           <div class="sec-title">Nevarno območje</div>
@@ -1748,6 +1764,20 @@ input,select,textarea{background:var(--field);color:var(--ink);border:1px solid 
 <script>
 const SUPABASE_URL = 'https://arqeqqokqbfmmhxzrkqh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_8LA5MlvLC9TZs1VDNW-yRA_Ntkl4BEx';
+
+// Progresove LASTNE Stripe povezave za naročnino trenerja (ne trenerjeve povezave za
+// svoje stranke - to je paketi.placilna_povezava, ločen sistem). Ustvari ju v Progresovem
+// Stripe računu kot ponavljajoči se ceni (Payment Links), z metadata "stopnja"="trener"
+// oz. "studio", nato tukaj zamenjaj placeholderja s pravima URL-jema.
+const STRIPE_NAROCNINA_LINKI = {
+  trener: 'https://buy.stripe.com/ZAMENJAJ_ZA_TRENER',
+  studio: 'https://buy.stripe.com/ZAMENJAJ_ZA_STUDIO'
+};
+const NAROCNINA_LIMITI = { zacetek: 3, trener: 30, studio: 70, po_meri: Infinity };
+function nadgradiUrl(stopnja){
+  const base = STRIPE_NAROCNINA_LINKI[stopnja];
+  return base + (base.indexOf('?') > -1 ? '&' : '?') + 'client_reference_id=' + encodeURIComponent(session.user.id);
+}
 
 let session = null;
 let clients = [];
@@ -2844,10 +2874,11 @@ async function saveNotifTrener(){
 async function loadSettingsData(){
   document.getElementById('profEmailVal').value = (session.user && session.user.email) || '';
   try{
-    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=id,ime,email,brand_ime,brand_barva,brand_ikona_url,ustvarjen,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg,omogoci_termine,telefon,opis,obv_novo_sporocilo,obv_zakljucen_trening,obv_nova_meritev,obv_brez_vnosa,obv_placilo,obv_potek_narocnine,tihi_od,tihi_do,privzeti_koraki,privzeto_spanje,brand_paleta', { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=id,ime,email,brand_ime,brand_barva,brand_ikona_url,ustvarjen,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg,omogoci_termine,telefon,opis,obv_novo_sporocilo,obv_zakljucen_trening,obv_nova_meritev,obv_brez_vnosa,obv_placilo,obv_potek_narocnine,tihi_od,tihi_do,privzeti_koraki,privzeto_spanje,brand_paleta,narocnina_stopnja,narocnina_placano_do', { headers: authHeaders(), cache: 'no-store' });
     const rows = res.ok ? await res.json() : [];
     const t = rows[0];
     if(t){
+      renderMojaNarocnina(t);
       document.getElementById('profImeVal').value = t.ime || '';
       trenerjevPrag = t.prag_pozornosti_dni || 14;
       privzBeljMinGlobal = t.privzeto_beljakovine_min_gkg;
@@ -2871,6 +2902,28 @@ async function loadSettingsData(){
       setSw('obvPotek', t.obv_potek_narocnine !== false);
     }
   }catch(e){}
+}
+const IME_STOPNJE = { zacetek:'Začetek (brezplačno)', trener:'Trener', studio:'Studio', po_meri:'Po meri' };
+function renderMojaNarocnina(t){
+  const wrap = document.getElementById('mojaNarocninaStanje');
+  if(!wrap) return;
+  const stopnja = t.narocnina_stopnja || 'zacetek';
+  const veljavna = stopnja === 'zacetek' || !t.narocnina_placano_do || t.narocnina_placano_do >= new Date().toISOString().slice(0,10);
+  const efektivnaStopnja = veljavna ? stopnja : 'zacetek';
+  const limit = NAROCNINA_LIMITI[efektivnaStopnja];
+  const steviloStrank = clients.length;
+  const prekoraceno = steviloStrank > limit;
+  let html = '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+    + '<span style="font-family:Anton,sans-serif;font-weight:800;font-size:20px">' + (IME_STOPNJE[efektivnaStopnja] || efektivnaStopnja) + '</span>'
+    + (efektivnaStopnja !== 'zacetek' && t.narocnina_placano_do ? '<span style="font-size:12px;color:var(--muted)">velja do ' + t.narocnina_placano_do + '</span>' : '')
+    + '</div>'
+    + '<div style="font-size:12.5px;color:var(--muted);margin-top:6px">' + steviloStrank + ' / ' + (limit === Infinity ? '∞' : limit) + ' strank</div>';
+  if(!veljavna && stopnja !== 'zacetek'){
+    html += '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:12.5px">Naročnina "' + (IME_STOPNJE[stopnja]||stopnja) + '" je potekla — nadgradi spodaj, da jo obnoviš.</div>';
+  } else if(prekoraceno){
+    html += '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:12.5px">Presegel/a si mejo trenutne stopnje — razmisli o nadgradnji.</div>';
+  }
+  wrap.innerHTML = html;
 }
 async function saveProfileName(){
   const btn = document.getElementById('profSaveBtn');
