@@ -1302,10 +1302,21 @@ input,select,textarea{background:var(--field);color:var(--ink);border:1px solid 
             <div id="paketList"></div>
           </div>
           <div class="card hidden" id="opomnikiCard" style="margin-bottom:16px"></div>
+          <div class="card" style="margin-bottom:16px">
+            <h3 style="font-family:Anton,sans-serif;font-weight:400;letter-spacing:.02em;text-transform:uppercase;font-size:17px;margin-bottom:10px">Samodejna plačila (Stripe)</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Ko to povežeš, Progres sam potrdi dostop stranki takoj po uspešnem plačilu na tvoji Stripe povezavi — brez ročnega "+ Zabeleži plačilo".</p>
+            <div class="field"><label>1. Ta naslov prilepi v Stripe (Developers → Webhooks → Add endpoint)</label>
+              <input type="text" id="stripeWebhookUrl" readonly onclick="this.select()" style="font-family:monospace;font-size:12px">
+            </div>
+            <p style="font-size:11.5px;color:var(--muted);margin:-4px 0 12px">Pri dogodkih izberi <em>checkout.session.completed</em>.</p>
+            <div class="field"><label>2. Stripe ti pokaže "Signing secret" (whsec_...) — prilepi ga sem</label>
+              <input type="text" id="stripeWebhookSecret" placeholder="whsec_...">
+            </div>
+            <button class="btn btn-sm" id="stripeWebhookSaveBtn" onclick="saveStripeWebhookSecret()">Shrani</button>
+            <p style="font-size:11px;color:var(--muted);margin-top:10px" id="stripeWebhookStatus"></p>
+          </div>
         </div>
       </div>
-
-      <div class="hidden">
 
       <div class="card hidden" id="paketForm">
         <div class="grid2">
@@ -1315,9 +1326,9 @@ input,select,textarea{background:var(--field);color:var(--ink);border:1px solid 
         <div class="field"><label>Kratek opis (neobvezno)</label><input type="text" id="pkOpis" placeholder="npr. Za tiste, ki želijo osnovno spremljanje"></div>
         <div class="field"><label>Kaj vsebuje (ena vrstica = ena vrstica seznama)</label><textarea id="pkFunkcije" rows="3" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:'Inter Tight',sans-serif;resize:vertical" placeholder="Osebni program treningov&#10;Spremljanje napredka&#10;Tedenski check-in"></textarea></div>
         <div class="field"><label>Stripe plačilna povezava (neobvezno)</label><input type="text" id="pkPovezava" placeholder="https://buy.stripe.com/..."></div>
-        <p style="font-size:11.5px;color:var(--muted);margin:-6px 0 12px">Ustvariš jo v svojem Stripe računu (Payment Links) — stranka bo ob kliku "Naroči se" preusmerjena tja. Brez povezave se paket prikaže samo informativno.</p>
+        <div class="field"><label>Trajanje ob plačilu (mesecev)</label><input type="number" min="1" step="1" id="pkTrajanje" placeholder="1" value="1"></div>
+        <p style="font-size:11.5px;color:var(--muted);margin:-6px 0 12px">Plačilno povezavo ustvariš v svojem Stripe računu (Payment Links) — stranka bo ob kliku "Naroči se" preusmerjena tja. Ob uspešnem plačilu Progres samodejno podaljša dostop stranke za toliko mesecev, kot je nastavljeno tukaj (glej Nastavitve → Naročnine za povezavo s Stripe webhookom). Brez plačilne povezave se paket prikaže samo informativno.</p>
         <button class="btn" id="pkSaveBtn" onclick="savePaket()">Shrani paket</button>
-      </div>
       </div>
     </div>
 
@@ -2717,6 +2728,38 @@ function showNarocnine(){
   document.getElementById('topTabs').classList.remove('hidden');
   setTopTab('narocnine');
   Promise.all([loadPaketi(), loadPlacila()]).then(renderNarocnineDashboard);
+  loadStripeWebhookForm();
+}
+function loadStripeWebhookForm(){
+  document.getElementById('stripeWebhookUrl').value =
+    SUPABASE_URL + '/functions/v1/stripe-webhook?trener=' + session.user.id;
+  fetch(SUPABASE_URL + '/rest/v1/rpc/moj_stripe_webhook_secret', { method:'POST', headers: authHeaders() })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(secret){
+      const status = document.getElementById('stripeWebhookStatus');
+      if(secret){
+        document.getElementById('stripeWebhookSecret').value = secret;
+        status.textContent = '✓ Povezano — plačila se zdaj potrjujejo samodejno.';
+        status.style.color = 'var(--ok)';
+      } else {
+        status.textContent = 'Še ni povezano — plačila potrjuješ ročno.';
+        status.style.color = 'var(--muted)';
+      }
+    }).catch(function(){});
+}
+async function saveStripeWebhookSecret(){
+  const btn = document.getElementById('stripeWebhookSaveBtn');
+  const secret = document.getElementById('stripeWebhookSecret').value.trim();
+  btn.disabled = true; btn.textContent = 'Shranjujem...';
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id, {
+      method:'PATCH', headers: authHeaders(), body: JSON.stringify({ stripe_webhook_secret: secret || null })
+    });
+    if(!res.ok) throw new Error('Napaka pri shranjevanju.');
+    toast('Stripe povezava shranjena ✓');
+    loadStripeWebhookForm();
+  }catch(err){ toast(err.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Shrani'; }
 }
 function showObroki(){
   hideAllScreens();
@@ -2801,7 +2844,7 @@ async function saveNotifTrener(){
 async function loadSettingsData(){
   document.getElementById('profEmailVal').value = (session.user && session.user.email) || '';
   try{
-    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=*', { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=id,ime,email,brand_ime,brand_barva,brand_ikona_url,ustvarjen,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg,omogoci_termine,telefon,opis,obv_novo_sporocilo,obv_zakljucen_trening,obv_nova_meritev,obv_brez_vnosa,obv_placilo,obv_potek_narocnine,tihi_od,tihi_do,privzeti_koraki,privzeto_spanje,brand_paleta', { headers: authHeaders(), cache: 'no-store' });
     const rows = res.ok ? await res.json() : [];
     const t = rows[0];
     if(t){
@@ -4971,6 +5014,11 @@ function renderClientProgress(meritve){
   });
   listWrap.innerHTML = '<div class="card" style="margin-bottom:0"><div style="font-family:Anton,sans-serif;font-weight:400;letter-spacing:.02em;text-transform:uppercase;font-size:17px;color:var(--ink);margin-bottom:10px">Vsi vnosi</div>' + clampRows(vrsticeM, 'merC', 5) + '</div>';
 }
+function stripeLinkZaStranko(url){
+  if(!clientProfile || !clientProfile.id) return url;
+  var lociv = url.indexOf('?') > -1 ? '&' : '?';
+  return url + lociv + 'client_reference_id=' + encodeURIComponent(clientProfile.id);
+}
 function imaDostop(c){
   if(!c) return false;
   if((c.nacin_placila || 'gotovina') !== 'app') return true;
@@ -5006,7 +5054,7 @@ async function showPaywall(){
         return '<li style="font-size:13px;color:var(--muted);padding:3px 0 3px 20px;position:relative"><span style="position:absolute;left:0;color:var(--mint-strong);font-weight:700">✓</span>' + escapeHtml(f.trim()) + '</li>';
       }).join('');
       const btn = p.placilna_povezava
-        ? '<button class="btn" onclick="window.open(\'' + escapeHtml(p.placilna_povezava) + '\',\'_blank\')">Plačaj in aktiviraj</button>'
+        ? '<button class="btn" onclick="window.open(\'' + escapeHtml(stripeLinkZaStranko(p.placilna_povezava)) + '\',\'_blank\')">Plačaj in aktiviraj</button>'
         : '<button class="btn" disabled style="opacity:.5;cursor:default">Trener še ni omogočil plačila</button>';
       return '<div class="program-card"' + (izbran ? ' style="border-color:var(--primary-ink)"' : '') + '>'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">'
@@ -5049,7 +5097,7 @@ async function loadClientPaketi(){
       }).join('');
       const cenaHtml = p.cena ? ('<span style="font-family:Anton,sans-serif;font-weight:400;letter-spacing:.02em;font-size:19px;color:var(--accent)">' + p.cena + ' €</span><span style="font-size:12px;color:var(--muted)"> / mesec</span>') : '';
       const btnHtml = p.placilna_povezava
-        ? ('<button class="btn" onclick="window.open(\'' + escapeHtml(p.placilna_povezava) + '\',\'_blank\')">Naroči se</button>')
+        ? ('<button class="btn" onclick="window.open(\'' + escapeHtml(stripeLinkZaStranko(p.placilna_povezava)) + '\',\'_blank\')">Naroči se</button>')
         : ('<button class="btn" disabled style="opacity:.5;cursor:default">Trener še ni omogočil plačila</button>');
       return '<div class="program-card">'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">'
@@ -6186,6 +6234,7 @@ function togglePaketForm(){
 function resetPaketForm(){
   editingPaketId = null;
   ['pkIme','pkCena','pkOpis','pkFunkcije','pkPovezava'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('pkTrajanje').value = '1';
   document.getElementById('pkSaveBtn').textContent = 'Shrani paket';
 }
 function editPaket(id){
@@ -6197,6 +6246,7 @@ function editPaket(id){
   document.getElementById('pkOpis').value = p.opis || '';
   document.getElementById('pkFunkcije').value = p.funkcije || '';
   document.getElementById('pkPovezava').value = p.placilna_povezava || '';
+  document.getElementById('pkTrajanje').value = p.trajanje_mesecev || 1;
   document.getElementById('pkSaveBtn').textContent = 'Shrani spremembe';
   document.getElementById('paketForm').classList.remove('hidden');
   document.getElementById('pkIme').scrollIntoView({behavior:'smooth', block:'center'});
@@ -6212,7 +6262,8 @@ async function savePaket(){
       cena: document.getElementById('pkCena').value ? parseFloat(document.getElementById('pkCena').value) : null,
       opis: document.getElementById('pkOpis').value.trim() || null,
       funkcije: document.getElementById('pkFunkcije').value.trim() || null,
-      placilna_povezava: document.getElementById('pkPovezava').value.trim() || null
+      placilna_povezava: document.getElementById('pkPovezava').value.trim() || null,
+      trajanje_mesecev: document.getElementById('pkTrajanje').value ? parseInt(document.getElementById('pkTrajanje').value) : 1
     };
     if(editingPaketId){
       const res = await fetch(SUPABASE_URL + '/rest/v1/paketi?id=eq.' + editingPaketId, {
@@ -6283,7 +6334,7 @@ function renderPaketi(){
 let brandIconData = null;
 async function loadBrandingForm(){
   try{
-    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=*', { headers: authHeaders() });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=id,ime,email,brand_ime,brand_barva,brand_ikona_url,ustvarjen,prag_pozornosti_dni,privzeto_beljakovine_min_gkg,privzeto_beljakovine_max_gkg,omogoci_termine,telefon,opis,obv_novo_sporocilo,obv_zakljucen_trening,obv_nova_meritev,obv_brez_vnosa,obv_placilo,obv_potek_narocnine,tihi_od,tihi_do,privzeti_koraki,privzeto_spanje,brand_paleta', { headers: authHeaders() });
     const rows = res.ok ? await res.json() : [];
     const t = rows[0] || {};
     document.getElementById('brandName').value = t.brand_ime && t.brand_ime !== 'Moj Coaching' ? t.brand_ime : '';
