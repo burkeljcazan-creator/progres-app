@@ -13,10 +13,10 @@
   --bg:#F4F2EE; --bg-sunk:#EAE7E1; --panel:#FBFAF8; --panel-2:#F0EDE7;
   --ink:#121417; --dim:#5A6169; --muted:#7E858D;
   --line:#E1DDD6; --line-2:#CCC7BE;
-  --accent:#A9713A; --on-accent:#FFFDF9; --accent-soft:rgba(169,113,58,.10); --accent-line:rgba(169,113,58,.35);
+  --accent:#3F6A9E; --on-accent:#FFFFFF; --accent-soft:rgba(63,106,158,.10); --accent-line:rgba(63,106,158,.35);
   --ok:#5C7A4A; --ok-soft:rgba(92,122,74,.12);
   --danger:#9C4A3F; --danger-soft:rgba(156,74,63,.12);
-  --chart-track:#E4E0D8; --chart-ink:#B7B1A6; --chart-under:rgba(169,113,58,.14);
+  --chart-track:#E4E0D8; --chart-ink:#B7B1A6; --chart-under:rgba(63,106,158,.14);
   --sidebar:#EFECE6; --field:#FFFFFF;
   --r:3px; --r-sm:3px; --r-lg:4px; --row:44px;
 
@@ -30,10 +30,10 @@ body.dark-theme{
   --bg:#0A0B0C; --bg-sunk:#07080A; --panel:#101215; --panel-2:#15181C;
   --ink:#F1EFEA; --dim:#9AA0A6; --muted:#6B7178;
   --line:#1B1F23; --line-2:#262C32;
-  --accent:#D9A066; --on-accent:#0A0B0C; --accent-soft:rgba(217,160,102,.13); --accent-line:rgba(217,160,102,.38);
+  --accent:#8DB3E2; --on-accent:#0A0B0C; --accent-soft:rgba(141,179,226,.13); --accent-line:rgba(141,179,226,.38);
   --ok:#8FA97C; --ok-soft:rgba(143,169,124,.14);
   --danger:#C0655A; --danger-soft:rgba(192,101,90,.14);
-  --chart-track:#1B1F23; --chart-ink:#3A4249; --chart-under:rgba(217,160,102,.16);
+  --chart-track:#1B1F23; --chart-ink:#3A4249; --chart-under:rgba(141,179,226,.16);
   --sidebar:#0A0B0C; --field:#0E1013;
 }
 body.dark-theme input, body.dark-theme select, body.dark-theme textarea{ background:var(--field); color:var(--ink); border-color:var(--line-2); }
@@ -3004,9 +3004,9 @@ async function changePassword(){
 }
 // ---------- BARVNE PALETE ----------
 const PALETE = {
-  MOD: { ime:'Medena (privzeta)', opis:'Privzeta paleta redizajna', accent:'#D9A066', accent2:'#8FA97C',
-    light:{ bg:'#F4F2EE', card:'#FBFAF8', line:'#E1DDD6', track:'#E4E0D8', ink:'#121417', eyebrow:'#A9713A', cta:'#A9713A', ctaInk:'#FFFDF9', okBg:'rgba(92,122,74,.12)', okFg:'#5C7A4A', accent2:'#5C7A4A' },
-    dark: { bg:'#0A0B0C', card:'#101215', line:'#1B1F23', track:'#1B1F23', ink:'#F1EFEA', eyebrow:'#D9A066', cta:'#D9A066', ctaInk:'#0A0B0C', okBg:'rgba(143,169,124,.14)', okFg:'#8FA97C', accent:'#D9A066', accent2:'#8FA97C' } },
+  MOD: { ime:'Jeklena modra (privzeta)', opis:'Privzeta paleta, ista kot spletna stran', accent:'#8DB3E2', accent2:'#8FA97C',
+    light:{ bg:'#F4F2EE', card:'#FBFAF8', line:'#E1DDD6', track:'#E4E0D8', ink:'#121417', eyebrow:'#3F6A9E', cta:'#3F6A9E', ctaInk:'#FFFFFF', okBg:'rgba(92,122,74,.12)', okFg:'#5C7A4A', accent2:'#5C7A4A' },
+    dark: { bg:'#0A0B0C', card:'#101215', line:'#1B1F23', track:'#1B1F23', ink:'#F1EFEA', eyebrow:'#8DB3E2', cta:'#8DB3E2', ctaInk:'#0A0B0C', okBg:'rgba(143,169,124,.14)', okFg:'#8FA97C', accent:'#8DB3E2', accent2:'#8FA97C' } },
   GRA: { ime:'Grafit', opis:'Nevtralna, resna', accent:'#2E3439', accent2:'#6B767E',
     light:{ bg:'#F2F3F4', card:'#FFFFFF', line:'#E1E4E6', track:'#E7E9EB', ink:'#15191C', eyebrow:'#6B767E', cta:'#2E3439', ctaInk:'#FFFFFF', okBg:'#E7F1EB', okFg:'#2F6B4F' },
     dark: { bg:'#15191C', card:'#22272B', line:'#313840', track:'#313840', ink:'#E7EAEC', eyebrow:'#8B959C', cta:'#E7EAEC', ctaInk:'#15191C', okBg:'#15191C', okFg:'#5FB98C', accent:'#E7EAEC', accent2:'#8B959C' } },
