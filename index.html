@@ -1214,15 +1214,15 @@ input,select,textarea{background:var(--field);color:var(--ink);border:1px solid 
             <div class="set-row">
               <div class="lab"><b>Trener</b><span>do 30 strank · 30 € / mesec ali 324 € / leto (−10 %)</span></div>
               <div class="ctl" style="display:flex;gap:8px">
-                <button class="btn btn-ghost btn-sm" onclick="window.open(nadgradiUrl('trener','mesecno'),'_blank')">Mesečno</button>
-                <button class="btn btn-sm" onclick="window.open(nadgradiUrl('trener','letno'),'_blank')">Letno</button>
+                <button class="btn btn-ghost btn-sm" onclick="odpriNadgradnjo('trener','mesecno')">Mesečno</button>
+                <button class="btn btn-sm" onclick="odpriNadgradnjo('trener','letno')">Letno</button>
               </div>
             </div>
             <div class="set-row">
               <div class="lab"><b>Studio</b><span>do 80 strank · 63 € / mesec ali 680 € / leto (−10 %)</span></div>
               <div class="ctl" style="display:flex;gap:8px">
-                <button class="btn btn-ghost btn-sm" onclick="window.open(nadgradiUrl('studio','mesecno'),'_blank')">Mesečno</button>
-                <button class="btn btn-sm" onclick="window.open(nadgradiUrl('studio','letno'),'_blank')">Letno</button>
+                <button class="btn btn-ghost btn-sm" onclick="odpriNadgradnjo('studio','mesecno')">Mesečno</button>
+                <button class="btn btn-sm" onclick="odpriNadgradnjo('studio','letno')">Letno</button>
               </div>
             </div>
             <p style="font-size:11px;color:var(--muted);margin-top:10px">Nad 80 strank piši na <a href="mailto:zivjo@progres.si" style="color:inherit;text-decoration:underline">zivjo@progres.si</a> za dogovor po meri.</p>
@@ -1773,8 +1773,9 @@ const SUPABASE_ANON_KEY = 'sb_publishable_8LA5MlvLC9TZs1VDNW-yRA_Ntkl4BEx';
 
 // Progresove LASTNE Stripe povezave za naročnino trenerja (ne trenerjeve povezave za
 // svoje stranke - to je paketi.placilna_povezava, ločen sistem). Za vsako od 4 celic
-// ustvari v Progresovem Stripe računu ponavljajočo se ceno (Payment Link) z metadata
-// "stopnja"="trener"/"studio" IN "obdobje"="mesecno"/"letno", nato zamenjaj placeholderje.
+// ustvari v Progresovem Stripe računu ponavljajočo se ceno (Payment Link), nato zamenjaj
+// placeholderje. Webhook prepozna stopnjo in obdobje po TOČNEM znesku (30/324/63/680 €),
+// metadata ni potrebna - zato se zneski v Stripu ne smejo razlikovati od teh.
 const STRIPE_NAROCNINA_LINKI = {
   trener: { mesecno: 'https://buy.stripe.com/ZAMENJAJ_ZA_TRENER_MESECNO', letno: 'https://buy.stripe.com/ZAMENJAJ_ZA_TRENER_LETNO' },
   studio: { mesecno: 'https://buy.stripe.com/ZAMENJAJ_ZA_STUDIO_MESECNO', letno: 'https://buy.stripe.com/ZAMENJAJ_ZA_STUDIO_LETNO' }
@@ -1783,6 +1784,14 @@ const NAROCNINA_LIMITI = { zacetek: 3, trener: 30, studio: 80, po_meri: Infinity
 function nadgradiUrl(stopnja, obdobje){
   const base = STRIPE_NAROCNINA_LINKI[stopnja][obdobje];
   return base + (base.indexOf('?') > -1 ? '&' : '?') + 'client_reference_id=' + encodeURIComponent(session.user.id);
+}
+function odpriNadgradnjo(stopnja, obdobje){
+  // dokler povezave niso vstavljene, ne pošiljaj trenerja na neobstoječo Stripe stran
+  if(STRIPE_NAROCNINA_LINKI[stopnja][obdobje].indexOf('ZAMENJAJ') > -1){
+    toast('Spletno plačilo še ni vklopljeno — piši na zivjo@progres.si in uredimo ročno.');
+    return;
+  }
+  window.open(nadgradiUrl(stopnja, obdobje), '_blank');
 }
 
 let session = null;
@@ -2910,15 +2919,37 @@ async function loadSettingsData(){
   }catch(e){}
 }
 const IME_STOPNJE = { zacetek:'Začetek (brezplačno)', trener:'Trener', studio:'Studio', po_meri:'Po meri' };
-function renderMojaNarocnina(t){
-  const wrap = document.getElementById('mojaNarocninaStanje');
-  if(!wrap) return;
+// Stanje glede na mejo strank. "blizu" = zadnjih 10 % stopnje (vsaj ena stranka), da
+// trener dobi opozorilo, preden mejo preseže - tako obljublja tudi cenik na spletni strani.
+function stanjeNarocnine(t, steviloStrank){
   const stopnja = t.narocnina_stopnja || 'zacetek';
   const veljavna = stopnja === 'zacetek' || !t.narocnina_placano_do || t.narocnina_placano_do >= new Date().toISOString().slice(0,10);
   const efektivnaStopnja = veljavna ? stopnja : 'zacetek';
   const limit = NAROCNINA_LIMITI[efektivnaStopnja];
-  const steviloStrank = clients.length;
   const prekoraceno = steviloStrank > limit;
+  const blizu = !prekoraceno && limit !== Infinity && steviloStrank >= limit - Math.max(1, Math.ceil(limit * 0.1));
+  return { stopnja, veljavna, efektivnaStopnja, limit, prekoraceno, blizu };
+}
+function strankSklon(n){
+  const m = n % 100;
+  return n + ' ' + (m === 1 ? 'stranka' : m === 2 ? 'stranki' : (m === 3 || m === 4) ? 'stranke' : 'strank');
+}
+async function preveriMejoStrank(){
+  try{
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trenerji?id=eq.' + session.user.id + '&select=narocnina_stopnja,narocnina_placano_do', { headers: authHeaders(), cache: 'no-store' });
+    const t = res.ok ? (await res.json())[0] : null;
+    if(!t) return;
+    const s = stanjeNarocnine(t, clients.length);
+    const ime = IME_STOPNJE[s.efektivnaStopnja] || s.efektivnaStopnja;
+    if(s.prekoraceno) toast('Stranka dodana ✓ · ' + clients.length + ' / ' + s.limit + ' strank — presegel/a si mejo stopnje ' + ime + '. Nadgradiš v Nastavitvah.');
+    else if(s.blizu) toast('Stranka dodana ✓ · ' + clients.length + ' / ' + s.limit + ' strank — bližaš se meji stopnje ' + ime + '.');
+  }catch(e){}
+}
+function renderMojaNarocnina(t){
+  const wrap = document.getElementById('mojaNarocninaStanje');
+  if(!wrap) return;
+  const steviloStrank = clients.length;
+  const { stopnja, veljavna, efektivnaStopnja, limit, prekoraceno, blizu } = stanjeNarocnine(t, steviloStrank);
   let html = '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
     + '<span style="font-family:Anton,sans-serif;font-weight:800;font-size:20px">' + (IME_STOPNJE[efektivnaStopnja] || efektivnaStopnja) + '</span>'
     + (efektivnaStopnja !== 'zacetek' && t.narocnina_placano_do ? '<span style="font-size:12px;color:var(--muted)">' + (t.narocnina_obdobje === 'letno' ? 'letno' : 'mesečno') + ' · velja do ' + t.narocnina_placano_do + '</span>' : '')
@@ -2928,6 +2959,8 @@ function renderMojaNarocnina(t){
     html += '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:12.5px">Naročnina "' + (IME_STOPNJE[stopnja]||stopnja) + '" je potekla — nadgradi spodaj, da jo obnoviš.</div>';
   } else if(prekoraceno){
     html += '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:12.5px">Presegel/a si mejo trenutne stopnje — razmisli o nadgradnji.</div>';
+  } else if(blizu){
+    html += '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:12.5px">Bližaš se meji trenutne stopnje (še ' + strankSklon(limit - steviloStrank) + ') — nadgradnja je spodaj.</div>';
   }
   wrap.innerHTML = html;
 }
@@ -3590,6 +3623,7 @@ async function handleAddClient(e){
     e.target.reset();
     toast('Stranka dodana ✓');
     await loadClients();
+    preveriMejoStrank();
   }catch(err){ toast(err.message); }
   finally{ btn.disabled = false; btn.textContent = 'Shrani stranko'; }
 }
